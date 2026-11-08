@@ -1,0 +1,287 @@
+/* REGENBOGEN editorial workspace -------------------------------------------------
+   Filament remains the technical shell, but the visible workspace is deliberately
+   closer to a writing application than an admin database. No frontend build step. */
+
+/* Calm the admin chrome down and make controls easier to hit/read. */
+.fi-page { width: 100%; }
+.fi-header-heading { font-size: clamp(1.55rem, 1.3rem + .5vw, 2rem) !important; }
+.fi-header-subheading { font-size: 1rem !important; line-height: 1.5 !important; }
+.fi-sidebar-item-button { min-height: 3rem; border-radius: .7rem; }
+.fi-sidebar-item-label { font-size: 1rem !important; font-weight: 600; }
+.fi-sidebar-group-label { font-size: .88rem !important; }
+.fi-btn { min-height: 2.7rem; font-size: .96rem !important; padding-inline: 1rem !important; }
+.fi-input-wrp { min-height: 2.75rem; }
+.fi-input, .fi-select-input, .fi-fo-textarea textarea { font-size: 1rem !important; }
+.fi-fo-field-wrp-label label, .fi-fo-field-wrp-label span { font-size: .98rem; }
+.fi-fo-field-wrp-helper-text { font-size: .9rem !important; line-height: 1.45 !important; }
+.fi-section { border-radius: .85rem !important; }
+.fi-section-header-heading { font-size: 1.05rem !important; }
+.fi-section-header-description { font-size: .9rem !important; line-height: 1.45 !important; }
+
+/* Editorial pages use the monitor. Filament's generic column-span machinery is
+   intentionally bypassed here: one fluid writing column + one predictable rail. */
+.regenbogen-editor-grid {
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 1.25rem !important;
+  align-items: start;
+}
+
+.regenbogen-editor-main,
+.regenbogen-editor-sidebar {
+  min-width: 0;
+  width: 100%;
+  max-width: none !important;
+}
+
+.regenbogen-editor-title {
+  min-height: 3.65rem !important;
+  font-size: clamp(1.45rem, 1.2rem + .55vw, 1.95rem) !important;
+  font-weight: 750 !important;
+  line-height: 1.15 !important;
+}
+
+/* Treat the rich editor as the page, not as another form field. */
+.regenbogen-writing-editor,
+.regenbogen-page-editor,
+.regenbogen-writing-editor .fi-fo-rich-editor,
+.regenbogen-page-editor .fi-fo-rich-editor,
+.regenbogen-writing-editor .fi-fo-rich-editor-main,
+.regenbogen-page-editor .fi-fo-rich-editor-main,
+.regenbogen-writing-editor .fi-fo-rich-editor-content,
+.regenbogen-page-editor .fi-fo-rich-editor-content,
+.regenbogen-writing-editor .tiptap,
+.regenbogen-page-editor .tiptap,
+.regenbogen-writing-editor [contenteditable="true"],
+.regenbogen-page-editor [contenteditable="true"] {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.regenbogen-writing-editor .tiptap,
+.regenbogen-writing-editor [contenteditable="true"],
+.regenbogen-page-editor .tiptap,
+.regenbogen-page-editor [contenteditable="true"] {
+  min-height: 38rem;
+  margin-inline: 0 !important;
+  padding: clamp(1.35rem, 2vw, 2.15rem) !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.04rem, 1rem + .12vw, 1.14rem);
+  line-height: 1.72;
+}
+
+.regenbogen-page-editor .tiptap,
+.regenbogen-page-editor [contenteditable="true"] { min-height: 44rem; }
+
+.regenbogen-writing-editor .tiptap p,
+.regenbogen-page-editor .tiptap p { margin-block: 0 1em; }
+
+.regenbogen-writing-editor .tiptap h2,
+.regenbogen-writing-editor .tiptap h3,
+.regenbogen-page-editor .tiptap h2,
+.regenbogen-page-editor .tiptap h3 {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.15;
+}
+
+/* Advanced Rich Editor: controls stay visible while working in long copy. */
+.fi-fo-rich-editor-toolbar.fi-arte-sticky { z-index: 25; }
+
+@media (min-width: 1180px) {
+  .regenbogen-editor-grid {
+    grid-template-columns: minmax(0, 1fr) clamp(19rem, 22vw, 23rem) !important;
+    gap: clamp(1.25rem, 2vw, 2rem) !important;
+  }
+
+  .regenbogen-editor-sidebar {
+    position: sticky;
+    top: 5.25rem;
+    align-self: start;
+  }
+}
+
+@media (min-width: 1600px) {
+  .regenbogen-editor-grid {
+    grid-template-columns: minmax(0, 1fr) 23rem !important;
+  }
+
+  .regenbogen-writing-editor .tiptap,
+  .regenbogen-writing-editor [contenteditable="true"] { min-height: 48rem; }
+  .regenbogen-page-editor .tiptap,
+  .regenbogen-page-editor [contenteditable="true"] { min-height: 52rem; }
+}
+
+@media (max-width: 1179px) {
+  .regenbogen-writing-editor .tiptap,
+  .regenbogen-writing-editor [contenteditable="true"],
+  .regenbogen-page-editor .tiptap,
+  .regenbogen-page-editor [contenteditable="true"] { min-height: 28rem; }
+}
+
+/* 0.2.5 — editorial workspace ------------------------------------------------
+   Advanced Rich Editor is a Filament-native editor, so it inherits the panel
+   cleanly instead of embedding a second application inside the form. */
+.fi-main,
+.fi-page,
+.fi-page-content,
+.fi-sc-form,
+.fi-sc-form > div {
+  max-width: none !important;
+}
+
+.regenbogen-editor-main,
+.regenbogen-editor-sidebar { min-width: 0; }
+
+.regenbogen-writing-editor .fi-fo-rich-editor,
+.regenbogen-page-editor .fi-fo-rich-editor,
+.regenbogen-editor-main .fi-fo-rich-editor {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.regenbogen-writing-editor .fi-fo-rich-editor-content,
+.regenbogen-page-editor .fi-fo-rich-editor-content,
+.regenbogen-writing-editor .tiptap,
+.regenbogen-page-editor .tiptap,
+.regenbogen-writing-editor [contenteditable="true"],
+.regenbogen-page-editor [contenteditable="true"] {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: clamp(35rem, 60vh, 52rem) !important;
+}
+
+.regenbogen-writing-editor .tiptap,
+.regenbogen-page-editor .tiptap,
+.regenbogen-writing-editor [contenteditable="true"],
+.regenbogen-page-editor [contenteditable="true"] {
+  padding: clamp(1.35rem, 2vw, 2.25rem) !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.06rem, 1rem + .14vw, 1.16rem);
+  line-height: 1.72;
+}
+
+.regenbogen-page-editor .fi-fo-rich-editor-content,
+.regenbogen-page-editor .tiptap,
+.regenbogen-page-editor [contenteditable="true"] {
+  min-height: clamp(40rem, 68vh, 58rem) !important;
+}
+
+/* The package's sticky toolbar reserves its own space; only keep it above the
+   document and below Filament's top bar. */
+.fi-fo-rich-editor-toolbar.fi-arte-sticky {
+  z-index: 20 !important;
+}
+
+/* Source view should feel like a real code editor instead of a tiny modal. */
+.regenbogen-writing-editor .fi-fo-code-editor,
+.regenbogen-page-editor .fi-fo-code-editor {
+  min-height: 36rem !important;
+}
+
+/* Senior-friendly defaults: bigger targets, readable labels, restrained chrome. */
+.fi-main { padding-inline: clamp(1rem, 2.2vw, 2.5rem) !important; }
+.fi-header-heading { font-size: clamp(1.75rem, 1.55rem + .45vw, 2.2rem) !important; }
+.fi-sidebar-item-button { min-height: 3.25rem !important; }
+.fi-sidebar-item-label { font-size: 1.05rem !important; }
+.fi-btn { min-height: 2.9rem !important; font-size: 1rem !important; }
+.fi-fo-field-wrp-label label,
+.fi-fo-field-wrp-label span { font-size: 1.02rem !important; font-weight: 650; }
+.fi-fo-field-wrp-helper-text { font-size: .94rem !important; }
+.fi-input,
+.fi-select-input,
+.fi-fo-textarea textarea { font-size: 1.04rem !important; }
+
+/* Security profile: make MFA / passkeys read as account security rather than
+   an untranslated package diagnostic. */
+.fi-page:has([wire\:key*="multi-factor"]) .fi-section,
+.fi-page:has([class*="passkey"]) .fi-section {
+  border-radius: .85rem !important;
+}
+
+@media (min-width: 1280px) {
+  .regenbogen-editor-sidebar {
+    position: sticky;
+    top: 4.75rem;
+    align-self: start;
+  }
+}
+
+@media (max-width: 1279px) {
+  .regenbogen-writing-editor .fi-fo-rich-editor-content,
+  .regenbogen-page-editor .fi-fo-rich-editor-content,
+  .regenbogen-writing-editor .tiptap,
+  .regenbogen-page-editor .tiptap,
+  .regenbogen-writing-editor [contenteditable="true"],
+  .regenbogen-page-editor [contenteditable="true"] {
+    min-height: 30rem !important;
+  }
+}
+
+/* 0.2.8 — Save must remain reachable in long editorial documents. */
+.regenbogen-sticky-save {
+  position: fixed !important;
+  right: clamp(1rem, 2vw, 2rem) !important;
+  bottom: clamp(1rem, 2vw, 1.75rem) !important;
+  z-index: 60 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .22) !important;
+  min-width: 8.5rem !important;
+  justify-content: center !important;
+}
+
+@media (max-width: 640px) {
+  .regenbogen-sticky-save {
+    right: .75rem !important;
+    bottom: .75rem !important;
+    min-width: 7.5rem !important;
+  }
+}
+
+/* 0.3.0: redaktionelles Dashboard */
+.regenbogen-dashboard { display:grid; gap:1.15rem; }
+.regenbogen-dashboard-welcome { display:flex; align-items:center; justify-content:space-between; gap:1.5rem; padding:1.45rem 1.6rem; border:1px solid var(--gray-200); border-radius:1rem; background:var(--gray-50); }
+.dark .regenbogen-dashboard-welcome { border-color:var(--gray-700); background:var(--gray-900); }
+.regenbogen-dashboard-welcome h2 { margin:.1rem 0 .25rem; font-size:clamp(1.55rem,2.4vw,2.15rem); line-height:1.1; font-weight:800; }
+.regenbogen-dashboard-welcome p { margin:0; color:var(--gray-500); }
+.regenbogen-dashboard-eyebrow { margin:0 !important; font-size:.72rem; font-weight:800; letter-spacing:.08em; color:rgb(22 101 52) !important; }
+.regenbogen-dashboard-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
+.regenbogen-dashboard-actions a { display:inline-flex; align-items:center; min-height:2.7rem; padding:.65rem .9rem; border:1px solid var(--gray-300); border-radius:.65rem; font-weight:700; text-decoration:none; }
+.regenbogen-dashboard-actions .regenbogen-dashboard-primary { background:rgb(22 163 74); border-color:rgb(22 163 74); color:#fff; }
+.regenbogen-dashboard-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.8rem; }
+.regenbogen-dashboard-stats a { display:flex; flex-direction:column; gap:.15rem; padding:1.05rem 1.15rem; border:1px solid var(--gray-200); border-radius:.9rem; text-decoration:none; background:var(--gray-50); }
+.dark .regenbogen-dashboard-stats a { border-color:var(--gray-700); background:var(--gray-900); }
+.regenbogen-dashboard-stats strong { font-size:1.8rem; line-height:1; }
+.regenbogen-dashboard-stats span { color:var(--gray-500); font-weight:700; }
+.regenbogen-dashboard-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.regenbogen-dashboard-panel { overflow:hidden; border:1px solid var(--gray-200); border-radius:1rem; background:var(--gray-50); }
+.dark .regenbogen-dashboard-panel { border-color:var(--gray-700); background:var(--gray-900); }
+.regenbogen-dashboard-panel-head { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.15rem; border-bottom:1px solid var(--gray-200); }
+.dark .regenbogen-dashboard-panel-head { border-color:var(--gray-700); }
+.regenbogen-dashboard-panel h3 { margin:.1rem 0 0; font-size:1.15rem; font-weight:800; }
+.regenbogen-dashboard-count { display:inline-grid; place-items:center; min-width:2rem; height:2rem; padding:0 .55rem; border-radius:999px; background:rgb(220 252 231); color:rgb(22 101 52); font-weight:800; }
+.regenbogen-dashboard-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.85rem 1.15rem; border-bottom:1px solid var(--gray-100); text-decoration:none; }
+.regenbogen-dashboard-row:last-child { border-bottom:0; }
+.dark .regenbogen-dashboard-row { border-color:var(--gray-800); }
+.regenbogen-dashboard-row:hover { background:rgba(22,163,74,.06); }
+.regenbogen-dashboard-row > span:first-child { min-width:0; display:flex; flex-direction:column; gap:.18rem; }
+.regenbogen-dashboard-row strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.regenbogen-dashboard-row small { color:var(--gray-500); }
+.regenbogen-dashboard-empty { padding:1rem 1.15rem; margin:0; color:var(--gray-500); }
+@media (max-width: 900px) { .regenbogen-dashboard-columns { grid-template-columns:1fr; } .regenbogen-dashboard-welcome { align-items:flex-start; flex-direction:column; } }
+
+.regenbogen-iframe-placeholder {
+    display: grid;
+    gap: .25rem;
+    margin: 1rem 0;
+    padding: 1rem 1.1rem;
+    border: 1px dashed currentColor;
+    border-radius: .5rem;
+    opacity: .8;
+    cursor: grab;
+}
+.regenbogen-iframe-placeholder span {
+    overflow-wrap: anywhere;
+    font-size: .85em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
