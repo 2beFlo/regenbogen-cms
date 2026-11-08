@@ -1,6 +1,8 @@
 @extends('layouts.site')
 @php
-    $plainPageContent = html_entity_decode(strip_tags(\App\Support\RichContentSanitizer::sanitize((string) $page->content)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $pageContentForDescription = \App\Support\RichContentSanitizer::sanitize((string) $page->content);
+    $pageContentForDescription = preg_replace('/<(?:\/(?:p|div|li|h[1-6]|blockquote|section|article|tr|td)|br\s*\/?)[^>]*>/i', ' ', $pageContentForDescription) ?: '';
+    $plainPageContent = html_entity_decode(strip_tags($pageContentForDescription), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $plainPageContent = trim(preg_replace('/\s+/u', ' ', $plainPageContent) ?: '');
     $pageDescription = $page->seo_description ?: \Illuminate\Support\Str::limit($plainPageContent, 155, '…');
 @endphp

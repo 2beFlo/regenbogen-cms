@@ -13,6 +13,8 @@
 
 Redaktionelle SEO-Titel, Beschreibungen und Bildalternativen können in den jeweiligen Artikel-, Ausgabe- und Seitenformularen ergänzt werden. Bestehende Datensätze bleiben gültig; leere Felder verwenden automatische Fallbacks.
 
+Die Neuauflage des Hotfix-ZIPs korrigiert zusätzlich die Abstände zwischen Absätzen in automatisch erzeugten Seitenbeschreibungen. Sie enthält weiterhin die Migration; nach einer bereits erfolgten 1.5.5-Migration meldet Laravel einfach, dass keine Migration aussteht.
+
 ## Update
 
 Vorher Datenbank, `public/uploads/`, `.env` und `public/.htaccess` sichern. ZIP nach `/regenbogen-duderstadt.de/httpdocs/` hochladen und dort ausführen:
