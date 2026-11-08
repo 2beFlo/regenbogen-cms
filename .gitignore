@@ -1,4 +1,6 @@
 /.phpunit.cache
+regenbogen-cms-*-seo-hotfix*.zip
+regenbogen-cms-*-seo-hotfix*.sha256
 /node_modules
 /public/build
 /public/hot
