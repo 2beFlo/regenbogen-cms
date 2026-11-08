@@ -303,8 +303,11 @@ class QualityCheckRegenbogen extends Command
 
         if (is_file($seoController)) {
             $source = (string) file_get_contents($seoController);
-            foreach (['Disallow: /impressum', 'Disallow: /datenschutz', 'Disallow: /kontakt', '/sitemap.xml'] as $required) {
+            foreach (['Sitemap: https://regenbogen-duderstadt.de/sitemap.xml'] as $required) {
                 $this->expect(str_contains($source, $required), 'robots.txt-Konfiguration unvollständig: '.$required);
+            }
+            foreach (['Disallow: /impressum', 'Disallow: /datenschutz', 'Disallow: /kontakt'] as $forbidden) {
+                $this->expect(! str_contains($source, $forbidden), 'robots.txt darf noindex-Seiten nicht vom Crawling ausschließen: '.$forbidden);
             }
         }
     }

@@ -1,11 +1,15 @@
 @extends('layouts.site')
-@section('title', 'Aktuelle Ausgabe')
+@section('title', 'Das grüne Blatt für Duderstadt und das Untereichsfeld')
+@section('description', 'Der REGENBOGEN ist das Magazin der Grünen Untereichsfeld. Hier findest du aktuelle Artikel und Ausgaben aus Duderstadt und der Region.')
+@if($featured?->hero_image)
+    @section('image', \Illuminate\Support\Facades\Storage::disk('uploads')->url($featured->hero_image))
+@endif
 @section('content')
 @if($featured)
 <section class="lead-story shell" aria-labelledby="lead-title">
     <div class="lead-visual">
         @if($featured->hero_image)
-            <x-responsive-image :path="$featured->hero_image" class="lead-visual-image" sizes="(max-width: 74rem) 100vw, 74rem" loading="eager" fetchpriority="high" />
+            <x-responsive-image :path="$featured->hero_image" :alt="$featured->image_alt ?: $featured->title" class="lead-visual-image" sizes="(max-width: 74rem) 100vw, 74rem" loading="eager" fetchpriority="high" />
         @endif
         <div class="lead-shade" aria-hidden="true"></div>
 
@@ -56,7 +60,7 @@
             <article class="article-index-item{{ $illustration ? ' article-index-item-illustration' : '' }}">
                 <a class="article-index-image" href="{{ route('articles.show', $article->slug) }}" aria-label="{{ $article->title }} online lesen">
                     @if($cardImage)
-                        <x-responsive-image :path="$cardImage" sizes="(max-width: 46rem) 100vw, 35rem" />
+                        <x-responsive-image :path="$cardImage" :alt="$article->image_alt ?: $article->title" sizes="(max-width: 46rem) 100vw, 35rem" />
                     @else
                         <span class="article-image-placeholder" aria-hidden="true"></span>
                     @endif

@@ -4,6 +4,16 @@
     </IfModule>
 
     RewriteEngine On
+
+    # Einheitliche öffentliche URL: HTTPS, Apex-Domain und Pfade ohne End-Slash.
+    RewriteCond %{HTTP_HOST} ^(www\.)?regenbogen-duderstadt\.de(?::\d+)?$ [NC]
+    RewriteCond %{HTTP_HOST} ^www\.regenbogen-duderstadt\.de(?::\d+)?$ [NC,OR]
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://regenbogen-duderstadt.de%{REQUEST_URI} [R=301,L,NE]
+
+    RewriteCond %{HTTP_HOST} ^(www\.)?regenbogen-duderstadt\.de(?::\d+)?$ [NC]
+    RewriteRule ^(.+)/$ https://regenbogen-duderstadt.de/$1 [R=301,L,NE]
+
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
     RewriteCond %{HTTP:x-srf-token} .

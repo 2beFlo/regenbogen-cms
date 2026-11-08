@@ -1,5 +1,6 @@
 @extends('layouts.site')
-@section('title', $issue->title)
+@section('title', $issue->seo_title ?: $issue->title.' – Ausgabe')
+@section('description', $issue->seo_description ?: \Illuminate\Support\Str::limit(trim(implode(' ', array_filter([$issue->subtitle, $issue->published_at?->format('Y'), 'REGENBOGEN aus Duderstadt und dem Untereichsfeld. Beiträge online lesen und die Ausgabe als PDF herunterladen.']))), 155, '…'))
 @section('content')
 <section class="archive-page shell">
     <header class="archive-header">

@@ -17,7 +17,7 @@ class Article extends Model
 
     protected $fillable = [
         'issue_id', 'rubric_id', 'created_by', 'title', 'card_title', 'slug', 'category', 'teaser', 'content',
-        'hero_image', 'card_image', 'image_notice', 'status', 'featured', 'published_at',
+        'hero_image', 'card_image', 'image_alt', 'image_notice', 'seo_title', 'seo_description', 'status', 'featured', 'published_at',
         'review_requested_at', 'review_requested_by', 'review_message', 'reviewed_at', 'reviewed_by', 'review_feedback',
     ];
 

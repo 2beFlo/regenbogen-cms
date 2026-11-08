@@ -10,6 +10,7 @@ use Filament\Actions\EditAction;
 use Kisame76\FilamentAdvancedRichEditor\Forms\Components\AdvancedRichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -81,6 +82,14 @@ class CmsPageResource extends Resource
                             ->helperText('Visuell bearbeiten oder über „Quelltext“ direkt den HTML-Code öffnen. Mit „Vollbild“ lässt sich die Seite ohne Ablenkung bearbeiten.')
                             ->extraAttributes(['class' => 'regenbogen-page-editor'])
                             ->columnSpanFull(),
+
+                        Section::make('Suchmaschinen')
+                            ->collapsed()
+                            ->description('Optional. Ohne eigene Angaben werden Seitentitel und ein Auszug aus dem Inhalt verwendet.')
+                            ->schema([
+                                TextInput::make('seo_title')->label('SEO-Titel')->maxLength(255),
+                                Textarea::make('seo_description')->label('SEO-Beschreibung')->rows(3)->maxLength(320),
+                            ]),
                     ])
                         ->extraAttributes(['class' => 'regenbogen-editor-main'])
                         ->columnSpan([

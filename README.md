@@ -1,4 +1,4 @@
-# REGENBOGEN CMS 1.5.4
+# REGENBOGEN CMS 1.5.5
 
 Produktionsstand des Redaktionssystems für den **REGENBOGEN – Das Magazin der Grünen Untereichsfeld** auf Basis von **Laravel 13** und **Filament 5**.
 
@@ -61,6 +61,10 @@ Auf dem eingesetzten netcup-Setup **kein `php artisan optimize`** ausführen. De
 - `app/Console/Commands/QualityCheckRegenbogen.php` – Release-/Betriebsprüfung
 
 ## Release
+
+**Version 1.5.5 – SEO-Hotfix**
+
+Ergänzt frei pflegbare SEO-Titel und -Beschreibungen, Canonical- und Social-Metadaten, strukturierte Publisher-/Artikeldaten, Veröffentlichungsdaten, Alternativtexte sowie die URL-Normalisierung und eine crawlbare `robots.txt`.
 
 **Version 1.5.4 – 5. September 2026**
 

@@ -133,3 +133,18 @@ php artisan regenbogen:quality --strict
 ```
 
 Erst bei grünem Quality-Gate wieder freigeben.
+
+### SEO-Hotfix 1.5.5
+
+Vor dem Hotfix Datenbank, `public/uploads/`, `.env` und `public/.htaccess` sichern. Das Hotfix-ZIP enthält nur geänderte Dateien mit Pfaden relativ zur Projektwurzel und kann daher direkt in `httpdocs/` entpackt werden.
+
+```bash
+cd /regenbogen-duderstadt.de/httpdocs
+cp public/.htaccess public/.htaccess.backup-$(date +%Y%m%d%H%M%S)
+unzip -o regenbogen-cms-1.5.5-seo-hotfix.zip
+php artisan migrate --force
+php artisan optimize:clear
+php artisan regenbogen:quality --strict
+```
+
+Das Update ergänzt optionale SEO-Felder; die Migration ist erforderlich. Es ändert keine Artikel-, Ausgaben- oder Uploaddaten. `public/.htaccess` vereinheitlicht `www`, HTTP/HTTPS und End-Slashes, sofern die Domain `.htaccess` über Apache verarbeitet. Falls netcup Anfragen direkt durch nginx bedient, dieselben Weiterleitungen in den Apache-/nginx-Einstellungen der Domain setzen und die `curl -I`-Prüfung aus den Patchnotizen ausführen.

@@ -4,12 +4,59 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#005436">
-    <title>@yield('title', $settings->site_title) – {{ $settings->site_title }}</title>
-    <meta name="description" content="@yield('description', 'Der REGENBOGEN – das Magazin der Grünen Untereichsfeld.')">
+    @php
+        $canonicalPath = '/'.trim(request()->path(), '/');
+        $canonicalUrl = 'https://regenbogen-duderstadt.de'.($canonicalPath === '/' ? '/' : $canonicalPath);
+        $siteName = filled($settings->site_title) ? $settings->site_title : 'REGENBOGEN';
+        $seoTitle = trim($__env->yieldContent('title', $siteName));
+        $seoDescription = trim($__env->yieldContent('description', 'Das Magazin der Grünen Untereichsfeld: aktuelle Artikel und Ausgaben aus Duderstadt und dem Untereichsfeld.'));
+        if ($seoDescription === '') $seoDescription = 'Das Magazin der Grünen Untereichsfeld: aktuelle Artikel und Ausgaben aus Duderstadt und dem Untereichsfeld.';
+        $robotsContent = trim($__env->yieldContent('robots', 'index,follow'));
+        $organizationId = 'https://regenbogen-duderstadt.de/#organization';
+        $websiteSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            '@id' => 'https://regenbogen-duderstadt.de/#website',
+            'url' => 'https://regenbogen-duderstadt.de/',
+            'name' => $siteName,
+            'inLanguage' => 'de-DE',
+            'publisher' => ['@id' => $organizationId],
+        ];
+        $publisherSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'NewsMediaOrganization',
+            '@id' => $organizationId,
+            'name' => $siteName.' – Das Magazin der Grünen Untereichsfeld',
+            'url' => 'https://regenbogen-duderstadt.de/',
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => 'https://regenbogen-duderstadt.de/assets/regenbogen-mark.png',
+            ],
+        ];
+        $socialImage = trim($__env->yieldContent('image')) ?: 'https://regenbogen-duderstadt.de/assets/regenbogen-mark.png';
+    @endphp
+    <title>{{ $seoTitle }} – {{ $siteName }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="robots" content="{{ $robotsContent }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:locale" content="de_DE">
+    <meta property="og:site_name" content="{{ $siteName }}">
+    <meta property="og:title" content="{{ $seoTitle }} – {{ $siteName }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $socialImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seoTitle }} – {{ $siteName }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $socialImage }}">
+    <script type="application/ld+json">{!! json_encode($publisherSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+    <script type="application/ld+json">{!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
     <link rel="icon" href="{{ asset('assets/regenbogen-mark.svg') }}?v={{ @filemtime(public_path('assets/regenbogen-mark.svg')) ?: '1.1.6' }}" type="image/svg+xml">
     <link rel="alternate icon" href="{{ asset('assets/regenbogen-mark.png') }}?v={{ @filemtime(public_path('assets/regenbogen-mark.png')) ?: '1.1.6' }}" type="image/png">
     <link rel="apple-touch-icon" href="{{ asset('assets/regenbogen-mark.png') }}?v={{ @filemtime(public_path('assets/regenbogen-mark.png')) ?: '1.1.6' }}">
-    <link rel="stylesheet" href="{{ asset('css/regenbogen.css') }}?v={{ @filemtime(public_path('css/regenbogen.css')) ?: '1.5.4' }}">
+    <link rel="stylesheet" href="{{ asset('css/regenbogen.css') }}?v={{ @filemtime(public_path('css/regenbogen.css')) ?: '1.5.5' }}">
+    @yield('head')
 </head>
 <body>
 <a class="skip-link" href="#inhalt">Direkt zum Inhalt</a>

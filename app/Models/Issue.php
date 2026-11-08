@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class Issue extends Model
 {
-    protected $fillable = ['title', 'slug', 'subtitle', 'cover_image', 'pdf_file', 'published_at', 'page_count', 'format', 'is_current'];
+    protected $fillable = ['title', 'slug', 'subtitle', 'cover_image', 'pdf_file', 'published_at', 'page_count', 'format', 'is_current', 'seo_title', 'seo_description'];
 
     protected function casts(): array
     {

@@ -13,10 +13,7 @@ class SeoController
     {
         $body = implode("\n", [
             'User-agent: *',
-            'Disallow: /impressum',
-            'Disallow: /datenschutz',
-            'Disallow: /kontakt',
-            'Sitemap: '.url('/sitemap.xml'),
+            'Sitemap: https://regenbogen-duderstadt.de/sitemap.xml',
             '',
         ]);
 
@@ -26,21 +23,22 @@ class SeoController
     public function sitemap(): Response
     {
         $excludedPages = ['impressum', 'datenschutz', 'datenschutzerklaerung', 'kontakt'];
+        $canonical = static fn (string $path): string => 'https://regenbogen-duderstadt.de'.($path === '/' ? '/' : '/'.ltrim($path, '/'));
 
         $urls = collect([
-            ['loc' => route('home'), 'lastmod' => null],
-            ['loc' => route('issues.index'), 'lastmod' => null],
+            ['loc' => $canonical(route('home', [], false)), 'lastmod' => null],
+            ['loc' => $canonical(route('issues.index', [], false)), 'lastmod' => null],
         ])
             ->merge(Article::query()->published()->get()->map(fn (Article $article): array => [
-                'loc' => route('articles.show', $article->slug),
+                'loc' => $canonical(route('articles.show', $article->slug, false)),
                 'lastmod' => $article->updated_at,
             ]))
             ->merge(Issue::query()->get()->map(fn (Issue $issue): array => [
-                'loc' => route('issues.show', $issue->slug),
+                'loc' => $canonical(route('issues.show', $issue->slug, false)),
                 'lastmod' => $issue->updated_at,
             ]))
             ->merge(CmsPage::query()->published()->whereNotIn('slug', $excludedPages)->get()->map(fn (CmsPage $page): array => [
-                'loc' => route('pages.show', $page->slug),
+                'loc' => $canonical(route('pages.show', $page->slug, false)),
                 'lastmod' => $page->updated_at,
             ]));
 

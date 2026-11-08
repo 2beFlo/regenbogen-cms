@@ -17,7 +17,7 @@ class InstallRegenbogen extends Command
 
     public function handle(): int
     {
-        $this->info('REGENBOGEN CMS 1.5.4 wird eingerichtet …');
+        $this->info('REGENBOGEN CMS 1.5.5 wird eingerichtet …');
 
         if (glob(database_path('migrations/*_create_passkeys_table.php')) === []) {
             Artisan::call('vendor:publish', ['--tag' => 'passkeys-migrations']);

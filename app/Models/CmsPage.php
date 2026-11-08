@@ -14,6 +14,8 @@ class CmsPage extends Model
         'title',
         'slug',
         'content',
+        'seo_title',
+        'seo_description',
         'status',
         'show_in_navigation',
         'show_in_footer',

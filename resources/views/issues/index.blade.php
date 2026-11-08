@@ -1,5 +1,6 @@
 @extends('layouts.site')
-@section('title', 'Ausgaben')
+@section('title', 'Ausgabenarchiv aus Duderstadt')
+@section('description', 'Alle Ausgaben des REGENBOGEN aus Duderstadt und dem Untereichsfeld. Entdecke die Hefte, lies Beiträge online oder lade die Ausgabe als PDF herunter.')
 @section('content')
 <section class="archive-page shell">
     <header class="archive-header">

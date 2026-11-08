@@ -230,6 +230,24 @@ class ArticleResource extends Resource
                                     ->label('Bildhinweis')
                                     ->placeholder('z. B. KI-generiertes Symbolbild')
                                     ->maxLength(255),
+
+                                TextInput::make('image_alt')
+                                    ->label('Alternativtext für Artikelbilder')
+                                    ->helperText('Beschreibe knapp, was auf dem Artikelbild zu sehen ist. Wenn leer, wird die Artikelüberschrift verwendet.')
+                                    ->maxLength(255),
+                            ]),
+
+                        Section::make('Suchmaschinen')
+                            ->collapsed()
+                            ->description('Optional. Ohne eigene Angaben verwendet die Website Überschrift und Vorspann.')
+                            ->schema([
+                                TextInput::make('seo_title')
+                                    ->label('SEO-Titel')
+                                    ->maxLength(255),
+                                Textarea::make('seo_description')
+                                    ->label('SEO-Beschreibung')
+                                    ->rows(3)
+                                    ->maxLength(320),
                             ]),
 
                         Section::make('Weitere Einstellungen')
