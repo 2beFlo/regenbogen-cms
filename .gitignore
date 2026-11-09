@@ -1,4 +1,5 @@
 /.phpunit.cache
+**/.DS_Store
 regenbogen-cms-*-seo-hotfix*.zip
 regenbogen-cms-*-seo-hotfix*.sha256
 /node_modules
