@@ -230,6 +230,41 @@
   justify-content: center !important;
 }
 
+/* The FileUpload editor is rendered inside the page form. Promote the page
+   above Filament's sticky topbar only while that editor is actually open. */
+.fi-main:has(.fi-fo-file-upload-editor:not([x-cloak]):not([style*="display: none"])) {
+  position: relative;
+  z-index: 40;
+}
+
+/* Keep the image editor's own controls compact: the global editorial button
+   sizing otherwise makes the narrow control panel push its footer offscreen. */
+.fi-fo-file-upload-editor .fi-fo-file-upload-editor-image-ctn {
+  min-width: 0;
+  min-height: 0;
+}
+
+.fi-fo-file-upload-editor .fi-fo-file-upload-editor-control-panel {
+  min-width: 0;
+}
+
+.fi-fo-file-upload-editor .fi-fo-file-upload-editor-control-panel-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fi-fo-file-upload-editor .fi-btn {
+  min-width: 0;
+  min-height: 2.3rem;
+  padding-inline: .55rem !important;
+  font-size: .86rem !important;
+}
+
+.fi-fo-file-upload-editor .fi-fo-file-upload-editor-control-panel-footer .fi-btn {
+  width: 100%;
+  justify-content: center;
+}
+
 @media (max-width: 640px) {
   .regenbogen-sticky-save {
     right: .75rem !important;
