@@ -841,6 +841,14 @@ a {
   background: var(--soft-green);
 }
 
+.article-figure-illustration .article-figure-inner {
+  height: auto;
+}
+
+.article-figure-illustration img {
+  height: auto;
+}
+
 .article-reading {
   padding-top: clamp(2.5rem, 5vw, 4rem);
 }
