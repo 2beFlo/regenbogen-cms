@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Articles;
 
 use App\Filament\RichContent\IframeRichContentPlugin;
+use App\Filament\Forms\Components\SeoFields;
 use App\Enums\ArticleStatus;
 use App\Filament\Resources\Articles\Pages;
 use App\Models\Article;
@@ -237,18 +238,7 @@ class ArticleResource extends Resource
                                     ->maxLength(255),
                             ]),
 
-                        Section::make('Suchmaschinen')
-                            ->collapsed()
-                            ->description('Optional. Ohne eigene Angaben verwendet die Website Überschrift und Vorspann.')
-                            ->schema([
-                                TextInput::make('seo_title')
-                                    ->label('SEO-Titel')
-                                    ->maxLength(255),
-                                Textarea::make('seo_description')
-                                    ->label('SEO-Beschreibung')
-                                    ->rows(3)
-                                    ->maxLength(320),
-                            ]),
+                        SeoFields::make(),
 
                         Section::make('Weitere Einstellungen')
                             ->collapsed()

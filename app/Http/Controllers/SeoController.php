@@ -5,15 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\CmsPage;
 use App\Models\Issue;
+use App\Models\SiteSetting;
+use App\Support\SeoMetadata;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Response;
 
 class SeoController
 {
     public function robots(): Response
     {
+        $settings = SiteSetting::current();
+        $siteUrl = SeoMetadata::siteUrl($settings);
         $body = implode("\n", [
             'User-agent: *',
-            'Sitemap: https://regenbogen-duderstadt.de/sitemap.xml',
+            'Sitemap: '.$siteUrl.'/sitemap.xml',
             '',
         ]);
 
@@ -22,25 +27,27 @@ class SeoController
 
     public function sitemap(): Response
     {
-        $excludedPages = ['impressum', 'datenschutz', 'datenschutzerklaerung'];
-        $canonical = static fn (string $path): string => 'https://regenbogen-duderstadt.de'.($path === '/' ? '/' : '/'.ltrim($path, '/'));
+        $settings = SiteSetting::current();
+        $urls = collect();
+        $add = static function (string $path, ?Model $record = null, ?string $robots = null, $updatedAt = null, ?string $canonicalOverride = null) use (&$urls, $settings): void {
+            if (! SeoMetadata::isIndexable($settings, $record, $robots)) {
+                return;
+            }
 
-        $urls = collect([
-            ['loc' => $canonical(route('home', [], false)), 'lastmod' => null],
-            ['loc' => $canonical(route('issues.index', [], false)), 'lastmod' => null],
-        ])
-            ->merge(Article::query()->published()->get()->map(fn (Article $article): array => [
-                'loc' => $canonical(route('articles.show', $article->slug, false)),
-                'lastmod' => $article->updated_at,
-            ]))
-            ->merge(Issue::query()->get()->map(fn (Issue $issue): array => [
-                'loc' => $canonical(route('issues.show', $issue->slug, false)),
-                'lastmod' => $issue->updated_at,
-            ]))
-            ->merge(CmsPage::query()->published()->whereNotIn('slug', $excludedPages)->get()->map(fn (CmsPage $page): array => [
-                'loc' => $canonical(route('pages.show', $page->slug, false)),
-                'lastmod' => $page->updated_at,
-            ]));
+            $canonical = SeoMetadata::canonical($settings, $path, $canonicalOverride ?? $record?->seo_canonical_url);
+            if (! SeoMetadata::onSiteCanonical($settings, $canonical)) {
+                return;
+            }
+
+            $urls->push(['loc' => $canonical, 'lastmod' => $updatedAt]);
+        };
+
+        $add('/', null, $settings->seo_home_robots, canonicalOverride: $settings->seo_home_canonical);
+        $add('/ausgaben', null, $settings->seo_issues_robots, canonicalOverride: $settings->seo_issues_canonical);
+
+        Article::query()->published()->get()->each(fn (Article $article) => $add('/artikel/'.$article->slug, $article, updatedAt: $article->updated_at));
+        Issue::query()->get()->each(fn (Issue $issue) => $add('/ausgaben/'.$issue->slug, $issue, updatedAt: $issue->updated_at));
+        CmsPage::query()->published()->get()->each(fn (CmsPage $page) => $add('/'.$page->slug, $page, updatedAt: $page->updated_at));
 
         return response()->view('seo.sitemap', ['urls' => $urls])
             ->header('Content-Type', 'application/xml; charset=UTF-8');

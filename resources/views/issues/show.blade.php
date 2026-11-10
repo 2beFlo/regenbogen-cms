@@ -1,6 +1,14 @@
 @extends('layouts.site')
-@section('title', $issue->seo_title ?: $issue->title.' – Ausgabe')
-@section('description', $issue->seo_description ?: \Illuminate\Support\Str::limit(trim(implode(' ', array_filter([$issue->subtitle, $issue->published_at?->format('Y'), 'REGENBOGEN aus Duderstadt und dem Untereichsfeld. Beiträge online lesen und die Ausgabe als PDF herunterladen.']))), 155, '…'))
+@php
+    $seoMetadata = \App\Support\SeoMetadata::resolve(
+        $settings,
+        '/ausgaben/'.$issue->slug,
+        $issue,
+        defaultTitle: $issue->title.' – Ausgabe',
+        defaultDescription: \Illuminate\Support\Str::limit(trim(implode(' ', array_filter([$issue->subtitle, $issue->published_at?->format('Y'), 'REGENBOGEN aus Duderstadt und dem Untereichsfeld. Beiträge online lesen und die Ausgabe als PDF herunterladen.']))), 155, '…'),
+        defaultImage: $issue->cover_image,
+    );
+@endphp
 @section('content')
 <section class="archive-page shell">
     <header class="archive-header">

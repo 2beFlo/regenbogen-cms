@@ -1,9 +1,20 @@
 @extends('layouts.site')
-@section('title', 'Das grüne Magazin aus Duderstadt')
-@section('description', 'Das grüne Magazin aus Duderstadt und dem Untereichsfeld: aktuelle Beiträge und Positionen online lesen und Ausgaben entdecken.')
-@if($featured?->hero_image)
-    @section('image', \Illuminate\Support\Facades\Storage::disk('uploads')->url($featured->hero_image))
-@endif
+@php
+    $seoMetadata = \App\Support\SeoMetadata::resolve(
+        $settings,
+        '/',
+        defaultTitle: $settings->seo_home_title,
+        defaultDescription: $settings->seo_home_description,
+        defaultImage: $featured?->hero_image,
+        robotsOverride: $settings->seo_home_robots,
+        titleOverride: $settings->seo_home_title,
+        descriptionOverride: $settings->seo_home_description,
+        canonicalOverride: $settings->seo_home_canonical,
+        ogTitleOverride: $settings->seo_home_og_title,
+        ogDescriptionOverride: $settings->seo_home_og_description,
+        ogImageOverride: $settings->seo_home_og_image,
+    );
+@endphp
 @section('content')
 @if($featured)
 <section class="lead-story shell" aria-labelledby="lead-title">

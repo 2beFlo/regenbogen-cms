@@ -1,26 +1,31 @@
 @extends('layouts.site')
-@section('title', $article->seo_title ?: $article->title)
-@section('description', $article->seo_description ?: \Illuminate\Support\Str::limit((string) $article->teaser, 155, '…'))
-@section('robots', $preview ? 'noindex,nofollow' : 'index,follow')
+@php
+    $seoMetadata = \App\Support\SeoMetadata::resolve(
+        $settings,
+        '/artikel/'.$article->slug,
+        $article,
+        defaultTitle: $article->title,
+        defaultDescription: \Illuminate\Support\Str::limit((string) $article->teaser, 155, '…'),
+        defaultImage: $article->hero_image,
+        robotsOverride: $preview ? 'noindex,nofollow' : null,
+    );
+@endphp
 @section('og_type', 'article')
-@if($article->hero_image)
-    @section('image', \Illuminate\Support\Facades\Storage::disk('uploads')->url($article->hero_image))
-@endif
 @section('head')
     @php
         $articleSchema = [
             '@context' => 'https://schema.org',
             '@type' => 'NewsArticle',
             'headline' => $article->seo_title ?: $article->title,
-            'description' => $article->seo_description ?: \Illuminate\Support\Str::limit((string) $article->teaser, 155, '…'),
-            'mainEntityOfPage' => 'https://regenbogen-duderstadt.de/artikel/'.$article->slug,
+            'description' => $seoMetadata['description'],
+            'mainEntityOfPage' => $seoMetadata['canonical'],
             'author' => $article->authors->map(fn ($author) => ['@type' => 'Person', 'name' => $author->name])->all() ?: [['@type' => 'Organization', 'name' => 'REGENBOGEN Redaktion']],
-            'publisher' => ['@id' => 'https://regenbogen-duderstadt.de/#organization'],
+            'publisher' => ['@id' => \App\Support\SeoMetadata::siteUrl($settings).'#organization'],
             'articleSection' => $article->rubric_name,
         ];
         if ($article->published_at) $articleSchema['datePublished'] = $article->published_at->toAtomString();
         if ($article->updated_at) $articleSchema['dateModified'] = $article->updated_at->toAtomString();
-        if ($article->hero_image) $articleSchema['image'] = [\Illuminate\Support\Facades\Storage::disk('uploads')->url($article->hero_image)];
+        $articleSchema['image'] = [$seoMetadata['og_image']];
     @endphp
     @if($article->published_at)<meta property="article:published_time" content="{{ $article->published_at->toAtomString() }}">@endif
     @if($article->updated_at)<meta property="article:modified_time" content="{{ $article->updated_at->toAtomString() }}">@endif

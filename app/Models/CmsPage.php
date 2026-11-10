@@ -16,6 +16,11 @@ class CmsPage extends Model
         'content',
         'seo_title',
         'seo_description',
+        'seo_robots',
+        'seo_canonical_url',
+        'og_title',
+        'og_description',
+        'og_image',
         'status',
         'show_in_navigation',
         'show_in_footer',
@@ -34,6 +39,10 @@ class CmsPage extends Model
     {
         static::creating(function (CmsPage $page): void {
             $page->slug = $page->slug ?: Str::slug($page->title);
+
+            if (in_array($page->slug, ['impressum', 'datenschutz', 'datenschutzerklaerung'], true) && $page->seo_robots === null) {
+                $page->seo_robots = 'noindex,nofollow';
+            }
         });
     }
 

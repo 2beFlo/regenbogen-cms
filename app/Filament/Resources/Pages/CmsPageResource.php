@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Pages;
 
 use App\Filament\RichContent\IframeRichContentPlugin;
+use App\Filament\Forms\Components\SeoFields;
 use App\Filament\Resources\Pages\Pages;
 use App\Models\CmsPage;
 use BackedEnum;
@@ -83,13 +84,7 @@ class CmsPageResource extends Resource
                             ->extraAttributes(['class' => 'regenbogen-page-editor'])
                             ->columnSpanFull(),
 
-                        Section::make('Suchmaschinen')
-                            ->collapsed()
-                            ->description('Optional. Ohne eigene Angaben werden Seitentitel und ein Auszug aus dem Inhalt verwendet.')
-                            ->schema([
-                                TextInput::make('seo_title')->label('SEO-Titel')->maxLength(255),
-                                Textarea::make('seo_description')->label('SEO-Beschreibung')->rows(3)->maxLength(320),
-                            ]),
+                        SeoFields::make(),
                     ])
                         ->extraAttributes(['class' => 'regenbogen-editor-main'])
                         ->columnSpan([

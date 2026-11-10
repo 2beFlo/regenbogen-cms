@@ -1,6 +1,19 @@
 @extends('layouts.site')
-@section('title', 'Ausgabenarchiv aus Duderstadt')
-@section('description', 'Alle Ausgaben des REGENBOGEN aus Duderstadt und dem Untereichsfeld. Entdecke die Hefte, lies Beiträge online oder lade die Ausgabe als PDF herunter.')
+@php
+    $seoMetadata = \App\Support\SeoMetadata::resolve(
+        $settings,
+        '/ausgaben',
+        defaultTitle: $settings->seo_issues_title,
+        defaultDescription: $settings->seo_issues_description,
+        robotsOverride: $settings->seo_issues_robots,
+        titleOverride: $settings->seo_issues_title,
+        descriptionOverride: $settings->seo_issues_description,
+        canonicalOverride: $settings->seo_issues_canonical,
+        ogTitleOverride: $settings->seo_issues_og_title,
+        ogDescriptionOverride: $settings->seo_issues_og_description,
+        ogImageOverride: $settings->seo_issues_og_image,
+    );
+@endphp
 @section('content')
 <section class="archive-page shell">
     <header class="archive-header">
