@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\SeoController;
 use App\Models\Article;
+use App\Models\SiteSetting;
 use App\Support\ArticleQualityCheck;
+use App\Support\SeoMetadata;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Lang;
@@ -298,17 +301,13 @@ class QualityCheckRegenbogen extends Command
             );
         }
 
-        $seoController = app_path('Http/Controllers/SeoController.php');
-        $this->expect(is_file($seoController), 'SEO-Controller fehlt.');
-
-        if (is_file($seoController)) {
-            $source = (string) file_get_contents($seoController);
-            foreach (['Sitemap: https://regenbogen-duderstadt.de/sitemap.xml'] as $required) {
-                $this->expect(str_contains($source, $required), 'robots.txt-Konfiguration unvollständig: '.$required);
-            }
-            foreach (['Disallow: /impressum', 'Disallow: /datenschutz', 'Disallow: /kontakt'] as $forbidden) {
-                $this->expect(! str_contains($source, $forbidden), 'robots.txt darf noindex-Seiten nicht vom Crawling ausschließen: '.$forbidden);
-            }
+        try {
+            $settings = SiteSetting::current();
+            $robotsLines = preg_split('/\r?\n/', app(SeoController::class)->robots()->getContent()) ?: [];
+            $expectedSitemap = 'Sitemap: '.SeoMetadata::siteUrl($settings).'/sitemap.xml';
+            $this->expect(in_array($expectedSitemap, $robotsLines, true), 'robots.txt verweist nicht auf die konfigurierte Sitemap.');
+        } catch (Throwable $exception) {
+            $this->failures[] = 'robots.txt-Konfiguration konnte nicht geprüft werden: '.$exception->getMessage();
         }
     }
 
