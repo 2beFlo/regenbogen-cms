@@ -1,6 +1,6 @@
 @extends('layouts.site')
-@section('title', 'Das grüne Blatt für Duderstadt und das Untereichsfeld')
-@section('description', 'Der REGENBOGEN ist das Magazin der Grünen Untereichsfeld. Hier findest du aktuelle Artikel und Ausgaben aus Duderstadt und der Region.')
+@section('title', 'Das grüne Magazin aus Duderstadt')
+@section('description', 'Das grüne Magazin aus Duderstadt und dem Untereichsfeld: aktuelle Beiträge und Positionen online lesen und Ausgaben entdecken.')
 @if($featured?->hero_image)
     @section('image', \Illuminate\Support\Facades\Storage::disk('uploads')->url($featured->hero_image))
 @endif
@@ -18,8 +18,9 @@
         @endif
 
         <div class="lead-heading">
+            <h1 id="lead-title">Das grüne Magazin aus Duderstadt</h1>
             <p class="rubric rubric-light">{{ $featured->rubric_name }}</p>
-            <h1 id="lead-title">{{ $featured->display_title }}</h1>
+            <h2 id="lead-article-title">{{ $featured->display_title }}</h2>
         </div>
 
         <a class="card-click-target" href="{{ route('articles.show', $featured->slug) }}" aria-label="{{ $featured->title }} online lesen"></a>

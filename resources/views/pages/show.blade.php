@@ -8,8 +8,8 @@
 @endphp
 @section('title', $page->seo_title ?: $page->title.' aus Duderstadt')
 @section('description', $pageDescription)
-@if(in_array($page->slug, ['impressum', 'datenschutz', 'datenschutzerklaerung', 'kontakt'], true))
-    @section('robots', 'noindex,follow')
+@if(in_array($page->slug, ['impressum', 'datenschutz', 'datenschutzerklaerung'], true))
+    @section('robots', 'noindex,nofollow')
 @endif
 @section('content')
 <article class="page-shell shell">

@@ -24,7 +24,7 @@
             <article class="article-index-item issue-article-item">
                 <div class="article-index-title">
                     <p class="rubric">{{ $article->rubric_name }}</p>
-                    <h3><a href="{{ route('articles.show', $article->slug) }}">{{ $article->display_title }}</a></h3>
+                    <h2><a href="{{ route('articles.show', $article->slug) }}">{{ $article->display_title }}</a></h2>
                 </div>
                 <div class="article-index-copy">
                     <p>{{ $article->teaser }}</p>
@@ -33,7 +33,14 @@
                 </div>
             </article>
         @empty
-            <div class="empty-state"><h2>Noch keine Artikel</h2><p>Dieser Ausgabe sind noch keine veröffentlichten Artikel zugeordnet.</p></div>
+            <div class="empty-state">
+                <h2>Noch keine Artikel online</h2>
+                @if($issue->pdf_file)
+                    <p>Die Beiträge dieser Ausgabe sind nicht einzeln online veröffentlicht. Die vollständige Ausgabe steht als PDF zum Download bereit.</p>
+                @else
+                    <p>Dieser Ausgabe sind noch keine veröffentlichten Artikel zugeordnet.</p>
+                @endif
+            </div>
         @endforelse
     </div>
 </section>

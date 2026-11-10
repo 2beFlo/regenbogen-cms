@@ -334,6 +334,14 @@ a {
 }
 
 .lead-heading h1 {
+  max-width: 40ch;
+  margin: 0 0 0.65rem;
+  font: 700 clamp(0.9rem, 1.3vw, 1.1rem) / 1.2 var(--sans);
+  color: var(--paper);
+  letter-spacing: 0.02em;
+}
+
+.lead-heading h2 {
   max-width: 17ch;
   margin: 0.25rem 0 0;
   font: 800 clamp(3.1rem, 6.3vw, 5.4rem) / 1.02 var(--display);
@@ -464,6 +472,7 @@ a {
   object-position: center bottom;
 }
 
+.article-index-title h2,
 .article-index-title h3 {
   max-width: 11ch;
   margin: 0;
@@ -473,10 +482,12 @@ a {
   text-wrap: balance;
 }
 
+.article-index-title h2 a,
 .article-index-title h3 a {
   text-decoration: none;
 }
 
+.article-index-title h2 a:hover,
 .article-index-title h3 a:hover {
   text-decoration: underline;
   text-decoration-thickness: 0.06em;
@@ -1076,7 +1087,7 @@ a {
     left: 1.2rem;
   }
 
-  .lead-heading h1 {
+  .lead-heading h2 {
     max-width: 15ch;
     font-size: clamp(2.8rem, 12.5vw, 4.4rem);
     line-height: 1.02;
@@ -1113,6 +1124,7 @@ a {
     grid-column: auto;
   }
 
+  .article-index-title h2,
   .article-index-title h3 {
     max-width: 12ch;
     font-size: clamp(3rem, 13vw, 4.4rem);
@@ -1271,6 +1283,7 @@ a {
   grid-template-columns: minmax(0, 0.95fr) minmax(17rem, 1.05fr);
 }
 
+.issue-articles .article-index-title h2,
 .issue-articles .article-index-title h3 {
   max-width: 14ch;
 }

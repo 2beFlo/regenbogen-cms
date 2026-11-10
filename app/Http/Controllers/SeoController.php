@@ -22,7 +22,7 @@ class SeoController
 
     public function sitemap(): Response
     {
-        $excludedPages = ['impressum', 'datenschutz', 'datenschutzerklaerung', 'kontakt'];
+        $excludedPages = ['impressum', 'datenschutz', 'datenschutzerklaerung'];
         $canonical = static fn (string $path): string => 'https://regenbogen-duderstadt.de'.($path === '/' ? '/' : '/'.ltrim($path, '/'));
 
         $urls = collect([
