@@ -219,12 +219,12 @@
   }
 }
 
-/* 0.2.8 — Save must remain reachable in long editorial documents. */
+/* Keep save reachable in long editorial documents but below Filament dialogs. */
 .regenbogen-sticky-save {
   position: fixed !important;
   right: clamp(1rem, 2vw, 2rem) !important;
   bottom: clamp(1rem, 2vw, 1.75rem) !important;
-  z-index: 60 !important;
+  z-index: 20 !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .22) !important;
   min-width: 8.5rem !important;
   justify-content: center !important;

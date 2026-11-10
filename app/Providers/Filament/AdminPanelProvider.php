@@ -72,7 +72,10 @@ class AdminPanelProvider extends PanelProvider
             ->unsavedChangesAlerts()
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => '<link rel="stylesheet" href="'.e(asset('css/regenbogen-admin.css')).'">',
+                fn (): string => sprintf(
+                    '<link rel="stylesheet" href="%s">',
+                    e(asset('css/regenbogen-admin.css').'?v='.(filemtime(public_path('css/regenbogen-admin.css')) ?: '1')),
+                ),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
