@@ -29,9 +29,8 @@
         @endif
 
         <div class="lead-heading">
-            <h1 id="lead-title">Das grüne Magazin aus Duderstadt</h1>
             <p class="rubric rubric-light">{{ $featured->rubric_name }}</p>
-            <h2 id="lead-article-title">{{ $featured->display_title }}</h2>
+            <h1 id="lead-title">{{ $featured->display_title }}</h1>
         </div>
 
         <a class="card-click-target" href="{{ route('articles.show', $featured->slug) }}" aria-label="{{ $featured->title }} online lesen"></a>
