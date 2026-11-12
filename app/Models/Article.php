@@ -103,6 +103,11 @@ class Article extends Model
         return $this->belongsTo(Issue::class);
     }
 
+    public function issueEntries(): HasMany
+    {
+        return $this->hasMany(IssueEntry::class);
+    }
+
     public function rubric(): BelongsTo
     {
         return $this->belongsTo(Rubric::class);

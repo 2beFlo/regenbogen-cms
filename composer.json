@@ -63,6 +63,7 @@
   "minimum-stability": "stable",
   "prefer-stable": true,
   "require-dev": {
+    "mockery/mockery": "^1.6",
     "phpunit/phpunit": "^12.5"
   }
 }

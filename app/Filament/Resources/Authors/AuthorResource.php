@@ -2,12 +2,15 @@
 namespace App\Filament\Resources\Authors;
 use App\Filament\Resources\Authors\Pages;
 use App\Models\Author;
+use App\Models\User;
+use App\Enums\UserRole;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -24,6 +27,15 @@ class AuthorResource extends Resource
     public static function form(Schema $schema): Schema { return $schema->components([
         TextInput::make('name')->label('Name')->required()->maxLength(255),
         TextInput::make('email')->label('E-Mail')->email(),
+        Select::make('user_id')->label('Redakteur*innen-Konto')->placeholder('Kein Konto verknüpft')
+            ->options(fn (?Author $record): array => User::query()
+                ->where('role', UserRole::Redakteur->value)
+                ->whereNotIn('id', Author::query()->whereNotNull('user_id')
+                    ->when($record, fn ($query) => $query->whereKeyNot($record->getKey()))
+                    ->pluck('user_id'))
+                ->orderBy('name')->pluck('name', 'id')->all())
+            ->searchable()->nullable()->unique(ignoreRecord: true)
+            ->helperText('Nur explizit verknüpfte Profile können für die eigene Heftplanung zugeordnet werden.'),
         Textarea::make('bio')->label('Kurzvorstellung')->rows(5)
             ->helperText('Wird am Ende der Artikel als optionale Autorenbox angezeigt.')
             ->columnSpanFull(),
