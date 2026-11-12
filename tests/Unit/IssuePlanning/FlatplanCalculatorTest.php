@@ -155,8 +155,17 @@ class FlatplanCalculatorTest extends TestCase
         self::assertSame(2.75, $summary['unplaced_reserved_pages']);
         self::assertSame(3.25, $summary['remaining_pages']);
         self::assertSame(0.0, $summary['overbooked_pages']);
-        self::assertSame(3, $summary['editorially_ready_entries']);
+        self::assertSame(1, $summary['editorially_ready_entries']);
         self::assertSame(2, $summary['print_ready_pages']);
+    }
+
+    public function test_editorial_completion_uses_the_issue_planning_status_for_linked_articles(): void
+    {
+        $summary = FlatplanCalculator::summarize(4, [
+            $this->entry(1, 2, 0, 1, 'normal', 'ready', 'planned', 'draft'),
+        ]);
+
+        self::assertSame(1, $summary['editorially_ready_entries']);
     }
 
     public function test_it_reports_reserved_capacity_overbooking(): void

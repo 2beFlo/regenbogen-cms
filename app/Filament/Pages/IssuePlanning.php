@@ -416,10 +416,6 @@ class IssuePlanning extends Page
 
     public function editorialStatusLabel(IssueEntry $entry): string
     {
-        if ($entry->article) {
-            return $entry->article->status?->label() ?? 'Unbekannt';
-        }
-
         return match ($entry->planning_status) {
             'idea' => 'Idee', 'planned' => 'In Planung', 'research' => 'Recherche',
             'writing' => 'In Arbeit', 'ready' => 'Redaktionell fertig', default => 'Unbekannt',
@@ -478,7 +474,6 @@ class IssuePlanning extends Page
             'placement_type' => $entry->placement_type,
             'planning_status' => $entry->planning_status,
             'print_status' => $entry->print_status,
-            'article_status' => $entry->article?->status?->value,
         ];
     }
 

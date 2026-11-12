@@ -58,6 +58,24 @@ class IssuePlanningPageTest extends TestCase
         self::assertSame($planned->id, $component->instance()->selectedIssueId);
     }
 
+    public function test_linked_article_completion_uses_the_issue_planning_status_in_the_summary_and_flatplan(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe mit fertigem Heftplatz', 8);
+        $article = $this->article($editor, 'Verknüpfter Entwurf im fertigen Heftplatz');
+        $this->entry($issue, [
+            'article_id' => $article->id,
+            'page_start' => 2,
+            'planning_status' => 'ready',
+        ]);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $issue->id)
+            ->assertSee('1 / 1')
+            ->assertSee('Redaktionell fertig')
+            ->assertDontSee('Zur Freigabe');
+    }
+
     public function test_an_unplaced_cover_placeholder_can_be_repaired_in_place(): void
     {
         $editor = $this->user('redaktion');
@@ -307,7 +325,7 @@ class IssuePlanningPageTest extends TestCase
             ->call('saveEntry')
             ->assertHasNoErrors()
             ->assertSee('Verknüpfter Artikel')
-            ->assertSee('Zur Freigabe')
+            ->assertSee('Recherche')
             ->assertSee('Gesetzte Fassung vorhanden')
             ->assertSee('/admin/articles/'.$article->id.'/edit');
 

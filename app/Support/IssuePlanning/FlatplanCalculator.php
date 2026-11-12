@@ -184,8 +184,7 @@ final class FlatplanCalculator
                 $placed += $span;
             }
 
-            if (in_array($entry['article_status'] ?? null, ['review', 'published'], true)
-                || ($entry['article_status'] ?? null) === null && ($entry['planning_status'] ?? null) === 'ready') {
+            if (($entry['planning_status'] ?? null) === 'ready') {
                 $editoriallyReady++;
             }
 
