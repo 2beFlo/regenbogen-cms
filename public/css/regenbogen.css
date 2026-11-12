@@ -785,7 +785,7 @@ a {
 }
 
 .article-page-header h1 {
-  max-width: 15ch;
+  max-width: none;
   margin: 0;
   font: 800 clamp(3.9rem, 7.2vw, 6.7rem) / 1.02 var(--display);
   letter-spacing: 0;
@@ -794,7 +794,7 @@ a {
 }
 
 .article-page-dek {
-  max-width: 58rem;
+  max-width: none;
   margin: 1.25rem 0 0;
   font-size: clamp(1.2rem, 2vw, 1.55rem);
   font-weight: 700;
