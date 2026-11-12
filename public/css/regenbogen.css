@@ -855,19 +855,37 @@ a {
   margin: 0 0 1.35rem;
 }
 
-.article-end {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
+.article-author-box {
+  max-width: 54rem;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding: 1.35rem 1.5rem;
   border-top: var(--rule) solid var(--green);
-  margin-top: 2rem;
-  padding-top: 1rem;
-  font: 400 0.82rem/1.4 var(--sans);
+  background: var(--soft-green);
 }
 
-.article-end p {
+.article-author-box > h2 {
+  margin: 0 0 1rem;
+  font: 700 0.92rem/1.35 var(--sans);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.article-author-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1.25rem 2rem;
+}
+
+.article-author h3 {
+  margin: 0 0 0.45rem;
+  font: 700 1rem/1.35 var(--sans);
+}
+
+.article-author p {
   margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  white-space: pre-line;
 }
 
 .missing-article {
@@ -1189,11 +1207,6 @@ a {
   .article-figure-inner {
     height: 26rem;
   }
-
-  .article-end {
-    align-items: flex-start;
-    flex-direction: column;
-  }
 }
 
 @media (max-width: 23rem) {
@@ -1219,7 +1232,6 @@ a {
 @media print {
   .primary-nav,
   .button-row,
-  .article-end .button,
   .image-disclosure,
   .footer-nav {
     display: none;

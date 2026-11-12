@@ -33,6 +33,12 @@
 @endsection
 @section('content')
 <article class="article-page">
+    @php
+        $authorsWithBio = $article->authors
+            ->filter(fn ($author) => trim((string) $author->bio) !== '')
+            ->values();
+    @endphp
+
     @if($preview)
         <div class="shell preview-banner">Vorschau – dieser Artikel ist möglicherweise noch nicht veröffentlicht.</div>
     @endif
@@ -63,7 +69,24 @@
 
     <div class="article-reading shell">
         <div class="article-body entry-content">{!! \App\Support\EmailProtector::protectHtml(\App\Support\RichContentSanitizer::sanitize((string) $article->content)) !!}</div>
-        <footer class="article-end"><p>Von {{ $article->author_line }}</p></footer>
+
+        @if($authorsWithBio->isNotEmpty())
+            <section class="article-author-box" aria-labelledby="article-authors-title">
+                <h2 id="article-authors-title">
+                    {{ $authorsWithBio->count() === 1 ? 'Über '.$authorsWithBio->first()->name : 'Über die Autor*innen' }}
+                </h2>
+                <div class="article-author-list">
+                    @foreach($authorsWithBio as $author)
+                        <div class="article-author">
+                            @if($authorsWithBio->count() > 1)
+                                <h3>{{ $author->name }}</h3>
+                            @endif
+                            <p>{{ $author->bio }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
     </div>
 </article>
 @endsection

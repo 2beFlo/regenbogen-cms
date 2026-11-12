@@ -24,7 +24,9 @@ class AuthorResource extends Resource
     public static function form(Schema $schema): Schema { return $schema->components([
         TextInput::make('name')->label('Name')->required()->maxLength(255),
         TextInput::make('email')->label('E-Mail')->email(),
-        Textarea::make('bio')->label('Kurzvorstellung')->rows(5)->columnSpanFull(),
+        Textarea::make('bio')->label('Kurzvorstellung')->rows(5)
+            ->helperText('Wird am Ende der Artikel als optionale Autorenbox angezeigt.')
+            ->columnSpanFull(),
         TextInput::make('slug')->label('URL')->unique(ignoreRecord: true)->helperText('Optional; wird sonst automatisch erzeugt.'),
     ])->columns(2); }
     public static function table(Table $table): Table { return $table->columns([
