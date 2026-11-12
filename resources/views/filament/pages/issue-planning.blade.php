@@ -124,7 +124,7 @@
                             </label>
                             <label>
                                 <span>Umfang in Seiten</span>
-                                <input wire:model="entryForm.page_span" type="number" min="0.0001" max="9999.9999" step="0.0001" class="fi-input" required>
+                                <input wire:model="entryForm.page_span" type="number" min="0.25" max="9999.75" step="0.25" class="fi-input" required>
                             </label>
                             <label>
                                 <span>Startseite</span>
@@ -144,8 +144,8 @@
                                 @if ($this->isStructuralEntryForm())
                                     <div class="fi-input regenbogen-issue-entry-form__readonly">Seitenanfang</div>
                                 @else
-                                    <input wire:model="entryForm.page_offset" type="number" min="0" max="0.9999" step="0.0001" class="fi-input" aria-describedby="issue-page-offset-help">
-                                    <small id="issue-page-offset-help">Nur nötig, wenn Beiträge eine Seite teilen. 0 = Seitenanfang; 0,5 steht für die Seitenmitte.</small>
+                                    <input wire:model="entryForm.page_offset" type="number" min="0" max="0.75" step="0.25" class="fi-input" aria-describedby="issue-page-offset-help">
+                                    <small id="issue-page-offset-help">0 = Seitenanfang, 0,25 = Viertel, 0,5 = Mitte, 0,75 = Dreiviertel. Für die Folgeseite bitte die Startseite ändern.</small>
                                 @endif
                             </label>
                             <label>

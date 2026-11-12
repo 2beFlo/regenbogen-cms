@@ -61,6 +61,10 @@ class IssuePlanningService
 
     public function moveEntry(Issue $issue, int $entryId, int $pageStart, float $pageOffset = 0): IssueEntry
     {
+        if ($pageOffset > 0.75 || abs(($pageOffset * 4) - round($pageOffset * 4)) > 0.00001) {
+            throw ValidationException::withMessages(['page_start' => 'Startpositionen sind in Viertelseitenschritten möglich: 0, 0,25, 0,5 oder 0,75.']);
+        }
+
         return DB::transaction(function () use ($issue, $entryId, $pageStart, $pageOffset): IssueEntry {
             $lockedIssue = $this->lockIssue($issue);
             $entries = $this->lockEntries($lockedIssue);
@@ -108,6 +112,68 @@ class IssuePlanningService
                 'page_offset' => 0,
                 'author_ids' => $entry->authors()->pluck('authors.id')->all(),
             ]);
+        });
+    }
+
+    public function placeStructuralPlaceholder(Issue $issue, int $entryId): IssueEntry
+    {
+        return DB::transaction(function () use ($issue, $entryId): IssueEntry {
+            $lockedIssue = $this->lockIssue($issue);
+            $entries = $this->lockEntries($lockedIssue);
+            $entry = $entries->firstWhere('id', $entryId);
+
+            if (! $entry || ! in_array($entry->content_type, ['cover', 'closing_page'], true) || $entry->article_id !== null) {
+                throw ValidationException::withMessages(['entry' => 'Dieser strukturelle Platzhalter kann nicht platziert werden.']);
+            }
+
+            if ($entry->page_start !== null) {
+                throw ValidationException::withMessages(['entry' => 'Dieser Platzhalter ist bereits platziert.']);
+            }
+
+            if ($entries->contains(fn (IssueEntry $other): bool => $other->getKey() !== $entry->getKey()
+                && $other->content_type === $entry->content_type)) {
+                throw ValidationException::withMessages(['entry' => 'Es gibt bereits einen weiteren Platzhalter dieser Art in der Ausgabe.']);
+            }
+
+            $pageStart = $entry->content_type === 'cover' ? 1 : (int) $lockedIssue->page_count;
+            if ($entry->content_type === 'closing_page' && $pageStart < 2) {
+                throw ValidationException::withMessages(['entry' => 'Eine separate Schlussseite benötigt mindestens zwei Seiten.']);
+            }
+
+            $candidate = [
+                'page_start' => $pageStart,
+                'page_offset' => 0,
+                'page_span' => 1,
+                'placement_type' => 'normal',
+            ];
+            $this->assertCandidateFits($lockedIssue, $entries, $candidate, $entry->getKey());
+
+            $entry->fill([
+                'title' => $entry->content_type === 'cover' ? 'Titelseite' : 'Schlussseite',
+                'page_start' => $pageStart,
+                'page_offset' => 0,
+                'page_span' => 1,
+                'placement_type' => 'normal',
+                'is_locked' => false,
+            ]);
+            $entry->save();
+
+            return $entry->fresh(['article.authors', 'authors', 'responsibleUser']);
+        });
+    }
+
+    public function deleteUnplacedStructuralPlaceholder(Issue $issue, int $entryId): void
+    {
+        DB::transaction(function () use ($issue, $entryId): void {
+            $lockedIssue = $this->lockIssue($issue);
+            $entry = $this->lockEntries($lockedIssue)->firstWhere('id', $entryId);
+
+            if (! $entry || ! in_array($entry->content_type, ['cover', 'closing_page'], true)
+                || $entry->page_start !== null || $entry->article_id !== null) {
+                throw ValidationException::withMessages(['entry' => 'Nur ein noch nicht platzierter Cover- oder Schlussseiten-Platzhalter kann hier gelöscht werden.']);
+            }
+
+            $entry->delete();
         });
     }
 

@@ -31,7 +31,7 @@
         @else
             <div class="regenbogen-unplaced-list">
                 @foreach ($unplaced as $entry)
-                    <article class="regenbogen-unplaced-card" @if ($this->canMutatePlan() && ! $entry->is_locked) draggable="true" x-on:dragstart="$event.dataTransfer.setData('text/plain', '{{ $entry->id }}')" @endif>
+                    <article class="regenbogen-unplaced-card" @if ($this->canMutatePlan() && ! $entry->is_locked && ! in_array($entry->content_type, ['cover', 'closing_page'], true)) draggable="true" x-on:dragstart="$event.dataTransfer.setData('text/plain', '{{ $entry->id }}')" @endif>
                         <div>
                             <strong>{{ $entry->display_title }}</strong>
                             <span>{{ $this->contentTypeOptions()[$entry->content_type] ?? $entry->content_type }} · {{ number_format($entry->page_span, 2, ',', '') }} Seiten · {{ $this->editorialStatusLabel($entry) }}</span>
@@ -39,7 +39,14 @@
                             @if ($this->canSeeInternalNotes() && filled($entry->internal_notes)) <small class="regenbogen-flatplan-note">{{ $entry->internal_notes }}</small> @endif
                         </div>
                         @if ($this->canMutatePlan())
-                            <button type="button" wire:click="openEditEntry({{ $entry->id }})" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Eintrag bearbeiten</button>
+                            @if (in_array($entry->content_type, ['cover', 'closing_page'], true))
+                                <div class="regenbogen-issue-plan-row__buttons">
+                                    <button type="button" wire:click="{{ $entry->content_type === 'cover' ? 'openCoverPlaceholder' : 'openClosingPagePlaceholder' }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Auf feste Seite platzieren</button>
+                                    <button type="button" wire:click="removeUnplacedStructuralPlaceholder({{ $entry->id }})" wire:confirm="Diesen noch nicht platzierten Platzhalter endgültig löschen?" class="fi-btn fi-btn-size-sm fi-btn-color-danger">Platzhalter löschen</button>
+                                </div>
+                            @else
+                                <button type="button" wire:click="openEditEntry({{ $entry->id }})" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Eintrag bearbeiten</button>
+                            @endif
                         @endif
                     </article>
                 @endforeach

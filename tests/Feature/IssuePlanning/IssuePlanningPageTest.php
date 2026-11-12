@@ -15,11 +15,87 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Carbon\Carbon;
 use Tests\TestCase;
 
 class IssuePlanningPageTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_it_selects_the_nearest_upcoming_issue_by_default(): void
+    {
+        Carbon::setTestNow('2026-11-12 12:00:00');
+        $editor = $this->user('redaktion');
+        $current = Issue::query()->create([
+            'title' => 'Aktuelle Ausgabe', 'page_count' => 8, 'is_current' => true, 'published_at' => '2026-10-01',
+        ]);
+        Issue::query()->create(['title' => 'Spätere Ausgabe', 'page_count' => 12, 'planned_publication_date' => '2027-04-01']);
+        $next = Issue::query()->create(['title' => 'Nächste Ausgabe', 'page_count' => 8, 'planned_publication_date' => '2026-12-01']);
+
+        try {
+            $component = Livewire::actingAs($editor)->test(IssuePlanning::class);
+
+            self::assertNotSame($current->id, $component->instance()->selectedIssueId);
+            self::assertSame($next->id, $component->instance()->selectedIssueId);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_an_unplaced_cover_placeholder_can_be_repaired_in_place(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe mit verwaistem Cover', 8);
+        $cover = $issue->entries()->create([
+            'title' => 'Titelseite', 'content_type' => 'cover', 'page_start' => null, 'page_span' => 1,
+        ]);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $issue->id)
+            ->call('openCoverPlaceholder')
+            ->assertSet('entryFormOpen', false)
+            ->assertHasNoErrors();
+
+        self::assertSame(1, $cover->fresh()->page_start);
+        self::assertSame(1, $issue->entries()->where('content_type', 'cover')->count());
+    }
+
+    public function test_an_unplaced_structural_placeholder_can_be_deleted_explicitly(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe mit überflüssigem Cover', 8);
+        $cover = $issue->entries()->create([
+            'title' => 'Titelseite', 'content_type' => 'cover', 'page_start' => null, 'page_span' => 1,
+        ]);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $issue->id)
+            ->assertSee('Platzhalter löschen')
+            ->call('removeUnplacedStructuralPlaceholder', $cover->id)
+            ->assertHasNoErrors();
+
+        self::assertDatabaseMissing('issue_entries', ['id' => $cover->id]);
+    }
+
+    public function test_changing_the_issue_clears_a_stale_form_and_validation_message(): void
+    {
+        $editor = $this->user('redaktion');
+        $firstIssue = $this->issue('Ausgabe mit vorhandenem Cover', 8);
+        $secondIssue = $this->issue('Andere geplante Ausgabe', 12);
+        $firstIssue->entries()->create([
+            'title' => 'Titelseite', 'content_type' => 'cover', 'page_start' => 1, 'page_span' => 1,
+        ]);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $firstIssue->id)
+            ->call('openCoverPlaceholder')
+            ->assertHasErrors('page_start')
+            ->set('selectedIssueId', $secondIssue->id)
+            ->assertHasNoErrors()
+            ->assertSet('entryFormOpen', false)
+            ->assertSee('Andere geplante Ausgabe')
+            ->assertDontSee('Dieser Platzhalter ist in der Ausgabe bereits angelegt.');
+    }
 
     public function test_it_renders_dynamic_odd_and_even_spreads_and_free_pages(): void
     {
@@ -182,7 +258,9 @@ class IssuePlanningPageTest extends TestCase
             ->call('selectIssue', $issue->id)
             ->call('openEntryForm', 3)
             ->assertSee('Startposition auf der Seite')
-            ->assertSee('0,5 steht für die Seitenmitte');
+            ->assertSee('0,5 = Mitte')
+            ->assertSeeHtml('step="0.25"')
+            ->assertSeeHtml('max="0.75"');
     }
 
     public function test_editor_can_create_a_placeholder_link_an_article_and_change_both_statuses(): void

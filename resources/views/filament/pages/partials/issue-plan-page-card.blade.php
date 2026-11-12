@@ -9,7 +9,7 @@
     <div class="regenbogen-flatplan-page__slots"
         @if ($this->canMutatePlan())
             x-on:dragover.prevent
-            x-on:drop.prevent="const id = Number($event.dataTransfer.getData('text/plain')); const box = $el.getBoundingClientRect(); const offset = Math.max(0, Math.min(.9999, ($event.clientY - box.top) / box.height)); if (id) $wire.moveEntryToPage(id, {{ $pageNumber }}, offset)"
+            x-on:drop.prevent="const id = Number($event.dataTransfer.getData('text/plain')); const box = $el.getBoundingClientRect(); const raw = Math.max(0, Math.min(.75, ($event.clientY - box.top) / box.height)); const offset = Math.round(raw * 4) / 4; if (id) $wire.moveEntryToPage(id, {{ $pageNumber }}, offset)"
         @endif>
         @forelse ($pageSegments as $segment)
             @php($entry = $entries->get($segment['entry_id']))

@@ -62,7 +62,7 @@ class IssuePlanning extends Page
         $requestedIssue = request()->query('issue');
         $issues = $this->issues();
         $issue = $requestedIssue ? $issues->firstWhere('id', (int) $requestedIssue) : null;
-        $this->selectedIssueId = $issue?->getKey() ?? $issues->first()?->getKey();
+        $this->selectedIssueId = $issue?->getKey() ?? $this->defaultIssue($issues)?->getKey();
         $this->syncManualPlacements();
     }
 
@@ -105,6 +105,7 @@ class IssuePlanning extends Page
     {
         abort_unless($this->issues()->contains(fn (Issue $issue): bool => $issue->getKey() === $issueId), 403);
         $this->selectedIssueId = $issueId;
+        $this->resetValidation();
         $this->entryFormOpen = false;
         $this->editingEntryId = null;
         $this->syncManualPlacements();
@@ -113,9 +114,12 @@ class IssuePlanning extends Page
     public function updatedSelectedIssueId(): void
     {
         if (! $this->issues()->contains(fn (Issue $issue): bool => $issue->getKey() === (int) $this->selectedIssueId)) {
-            $this->selectedIssueId = $this->issues()->first()?->getKey();
+            $this->selectedIssueId = $this->defaultIssue($this->issues())?->getKey();
         }
 
+        $this->resetValidation();
+        $this->entryFormOpen = false;
+        $this->editingEntryId = null;
         $this->syncManualPlacements();
     }
 
@@ -167,7 +171,16 @@ class IssuePlanning extends Page
         $this->resetValidation();
         $this->editingEntryId = null;
 
-        if ($issue->entries()->where('content_type', $contentType)->exists()) {
+        $existing = $issue->entries()->where('content_type', $contentType)->first();
+        if ($existing && $existing->page_start === null && $existing->article_id === null) {
+            app(IssuePlanningService::class)->placeStructuralPlaceholder($issue, $existing->getKey());
+            $this->syncManualPlacements();
+            Notification::make()->success()->title($title.' auf Seite '.$pageStart.' platziert')->send();
+
+            return;
+        }
+
+        if ($existing) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'page_start' => 'Dieser Platzhalter ist in der Ausgabe bereits angelegt.',
             ]);
@@ -225,8 +238,8 @@ class IssuePlanning extends Page
             'title' => $entry->article?->title ?: $entry->title,
             'content_type' => $entry->content_type,
             'page_start' => $entry->page_start,
-            'page_offset' => $entry->page_offset,
-            'page_span' => $entry->page_span,
+            'page_offset' => $entry->page_start === null ? 0 : $this->quarterStep($entry->page_offset),
+            'page_span' => max(0.25, $this->quarterStep($entry->page_span)),
             'placement_type' => $entry->placement_type,
             'is_locked' => $entry->is_locked,
             'planning_status' => $entry->planning_status,
@@ -258,6 +271,13 @@ class IssuePlanning extends Page
         $this->entryFormOpen = false;
         $this->editingEntryId = null;
         Notification::make()->success()->title('Heftplatz gespeichert')->send();
+    }
+
+    public function removeUnplacedStructuralPlaceholder(int $entryId): void
+    {
+        $this->assertCanMutate();
+        app(IssuePlanningService::class)->deleteUnplacedStructuralPlaceholder($this->assertSelectedIssue(), $entryId);
+        Notification::make()->success()->title('Platzhalter gelöscht')->send();
     }
 
     public function moveEntryToPage(int $entryId, int $pageStart, float $pageOffset = 0): void
@@ -485,7 +505,7 @@ class IssuePlanning extends Page
         foreach ($this->entries() as $entry) {
             $this->manualPlacement[$entry->getKey()] = [
                 'page_start' => $entry->page_start ?? '',
-                'page_offset' => $entry->page_offset,
+                'page_offset' => $this->quarterStep($entry->page_offset),
             ];
         }
     }
@@ -502,5 +522,25 @@ class IssuePlanning extends Page
     {
         return $this->entries()->firstWhere('id', $entryId)
             ?? abort(404);
+    }
+
+    private function defaultIssue(Collection $issues): ?Issue
+    {
+        $today = now()->startOfDay();
+
+        return $issues
+            ->filter(fn (Issue $issue): bool => $issue->planned_publication_date !== null
+                && $issue->planned_publication_date->greaterThanOrEqualTo($today)
+                && $issue->published_at === null
+                && $issue->production_status !== 'archived')
+            ->sortBy(fn (Issue $issue): int => $issue->planned_publication_date->getTimestamp())
+            ->first()
+            ?? $issues->firstWhere('is_current', true)
+            ?? $issues->first();
+    }
+
+    private function quarterStep(float|int|string|null $value): float
+    {
+        return round((float) $value * 4) / 4;
     }
 }

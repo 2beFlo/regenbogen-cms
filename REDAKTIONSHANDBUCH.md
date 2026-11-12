@@ -48,7 +48,7 @@ Die **Ausgabenplanung** ist eine interne Redaktionsseite. Die öffentliche Ausga
 
 ### Ausgabe vorbereiten
 
-1. Unter **Ausgabenplanung** über **Neue Ausgabe planen** eine neue Ausgabe anlegen oder eine vorhandene Ausgabe auswählen. Nach dem Anlegen öffnet sich direkt der neue Plan.
+1. Unter **Ausgabenplanung** über **Neue Ausgabe planen** eine neue Ausgabe anlegen oder eine vorhandene Ausgabe auswählen. Nach dem Anlegen öffnet sich direkt der neue Plan. Beim nächsten Öffnen ist die nächste noch nicht veröffentlichte Ausgabe mit geplantem Erscheinungstermin vorausgewählt.
 2. Eine eindeutige **Ausgabennummer**, einen Arbeitstitel und bei Bedarf Redaktionsschluss sowie Drucktermin eintragen.
 3. Die **Gesamtseitenzahl** festlegen. Sie ist frei wählbar; auch ungerade Zahlen sind erlaubt. Wird sie später verkleinert, blockieren belegte Seiten die Änderung. Erst nach dem Verschieben oder Lösen der betroffenen Heftplätze kann gespeichert werden. Eine Ausgabe mit Heftplätzen kann nicht gelöscht werden; verschiebe deren Einträge vorher in eine andere Ausgabe.
 4. Im Heftspiegel wird Seite 1 als Titelseite geführt. Dort gibt es ausschließlich den Platzhalter **Titelseite**; CMS-Artikel werden nicht auf dem Cover eingeplant.
@@ -57,13 +57,13 @@ Die **Ausgabenplanung** ist eine interne Redaktionsseite. Die öffentliche Ausga
 
 - Über **Beitrag einplanen** einen Platzhalter erstellen. Ein CMS-Artikel ist dafür nicht erforderlich.
 - Für einen vorhandenen Artikel im Formular den CMS-Artikel auswählen. Überschrift, Autor*innen und redaktioneller Artikelstatus werden dann aus dem Artikel angezeigt; die Printproduktion bleibt separat.
-- Umfang als Seitenanteil eintragen. Mehrseitige Beiträge beginnen auf der gewählten Startseite und laufen auf die folgenden Seiten weiter. Kleine Beiträge können sich eine Seite teilen, wenn Startseite und Seitenanteil so gesetzt sind, dass sie einander nicht überlappen.
+- Umfang in Viertelseiten-Schritten eintragen. Mehrseitige Beiträge beginnen auf der gewählten Startseite und laufen auf die folgenden Seiten weiter. Kleine Beiträge können sich eine Seite teilen, wenn Startseite und Seitenanteil so gesetzt sind, dass sie einander nicht überlappen.
 - Ein Beitrag ohne feste Position bleibt unter **Noch nicht platziert** und reserviert dort weiterhin seinen Seitenumfang.
 - Eine echte **Doppelseite** belegt genau zwei gegenüberliegende Seiten und beginnt auf der geraden linken Seite. Ein normaler zweitseitiger Text bleibt davon unterscheidbar.
 - Auf der letzten Seite lässt sich bei Bedarf eine generische **Schlussseite** als Platzhalter anlegen. Sie wandert bei einer Änderung der Gesamtseitenzahl automatisch auf die neue letzte Seite; eine belegte Zielseite verhindert die Änderung.
 - Der WerDi-Comic lässt sich als Inhaltsart „WerDi-Comic“ mit einer ganzen A5-Seite einplanen. Er ist nicht verpflichtend.
 - Die Auswahl **CMS-Artikel** enthält nicht verplante Artikel sowie beim Bearbeiten den bereits zugeordneten Artikel. Titel, Rubrik und Autor*innen eines verknüpften Artikels werden aus dem CMS übernommen.
-- Die **Startposition auf der Seite** wird nur gebraucht, wenn mehrere Beiträge dieselbe Seite teilen: `0` bedeutet Seitenanfang, `0,5` Seitenmitte. Als verantwortliche Person kann jedes Benutzerkonto ausgewählt werden.
+- Die **Startposition auf der Seite** wird nur gebraucht, wenn mehrere Beiträge dieselbe Seite teilen: `0` bedeutet Seitenanfang, `0,25` Viertelseite, `0,5` Seitenmitte und `0,75` Dreiviertelseite. Für den Anfang der Folgeseite die Startseite ändern. Als verantwortliche Person kann jedes Benutzerkonto ausgewählt werden.
 
 Im Heftspiegel können Redaktionsmitglieder Beiträge ziehen und ablegen. Über **Liste** gibt es dieselben Seitenfelder für die manuelle Platzierung und Nutzung auf kleineren Bildschirmen. Sperren schützt einen festen Platz vor versehentlichem Verschieben; zum Ändern zuerst entsperren. Platzierte Beiträge lassen sich auch aus dem Spiegel lösen, ohne sie zu löschen.
 

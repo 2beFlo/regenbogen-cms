@@ -122,6 +122,41 @@ class IssuePlanningServiceTest extends TestCase
         self::assertSame(0, $issue->entries()->where('article_id', $article->id)->count());
     }
 
+    public function test_an_unplaced_cover_placeholder_can_be_repaired_without_creating_a_duplicate(): void
+    {
+        $issue = $this->issue(8);
+        $cover = $this->entry($issue, [
+            'title' => 'Titelseite', 'content_type' => 'cover', 'page_start' => null, 'is_locked' => true,
+        ]);
+
+        $repaired = app(IssuePlanningService::class)->placeStructuralPlaceholder($issue, $cover->id);
+
+        self::assertSame(1, $repaired->page_start);
+        self::assertSame('Titelseite', $repaired->title);
+        self::assertFalse($repaired->is_locked);
+        self::assertSame(1, $issue->entries()->where('content_type', 'cover')->count());
+    }
+
+    public function test_only_unplaced_structural_placeholders_can_be_deleted(): void
+    {
+        $issue = $this->issue(8);
+        $orphan = $this->entry($issue, ['title' => 'Titelseite', 'content_type' => 'cover', 'page_start' => null]);
+        $placed = $this->entry($issue, ['title' => 'Schlussseite', 'content_type' => 'closing_page', 'page_start' => 8]);
+        $service = app(IssuePlanningService::class);
+
+        $service->deleteUnplacedStructuralPlaceholder($issue, $orphan->id);
+
+        self::assertDatabaseMissing('issue_entries', ['id' => $orphan->id]);
+        try {
+            $service->deleteUnplacedStructuralPlaceholder($issue, $placed->id);
+            self::fail('A placed structural placeholder must not be deleted through the unplaced-item action.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('entry', $exception->errors());
+        }
+
+        self::assertDatabaseHas('issue_entries', ['id' => $placed->id]);
+    }
+
     public function test_a_cms_article_cannot_be_linked_to_heftplaetze_in_multiple_issues(): void
     {
         $firstIssue = $this->issue(8);
@@ -161,6 +196,21 @@ class IssuePlanningServiceTest extends TestCase
 
         self::assertSame(6, $second->fresh()->page_start);
         self::assertSame(4, $first->fresh()->page_start);
+    }
+
+    public function test_manual_positions_use_quarter_page_steps(): void
+    {
+        $issue = $this->issue(8);
+        $entry = $this->entry($issue, ['title' => 'Viertelseite', 'page_start' => 2]);
+
+        try {
+            app(IssuePlanningService::class)->moveEntry($issue, $entry->id, 3, 0.1);
+            self::fail('Manual page positions must use quarter-page steps.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('page_start', $exception->errors());
+        }
+
+        self::assertSame(2, $entry->fresh()->page_start);
     }
 
     public function test_a_regular_two_page_entry_is_distinct_from_a_true_facing_spread(): void

@@ -39,7 +39,7 @@
                                     </label>
                                     <label>
                                         <span class="sr-only">Startposition auf der Seite: 0 bedeutet oben, 0,5 bedeutet Mitte</span>
-                                        <input wire:model="manualPlacement.{{ $entry->id }}.page_offset" type="number" min="0" max="0.9999" step="0.0001" class="fi-input" value="{{ $entry->page_offset }}" aria-label="Startposition auf der Seite: 0 bedeutet oben, 0,5 bedeutet Mitte">
+                                        <input wire:model="manualPlacement.{{ $entry->id }}.page_offset" type="number" min="0" max="0.75" step="0.25" class="fi-input" value="{{ $entry->page_offset }}" aria-label="Startposition auf der Seite: 0 bedeutet oben, 0,25 bedeutet Viertel, 0,5 bedeutet Mitte, 0,75 bedeutet Dreiviertel">
                                     </label>
                                     <button type="button" wire:click="manualMoveEntry({{ $entry->id }})" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Position setzen</button>
                                 </div>
