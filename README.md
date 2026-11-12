@@ -11,6 +11,7 @@ Produktionsstand des Redaktionssystems für den **REGENBOGEN – Das Magazin der
 - mehrere Autor*innen pro Artikel
 - frei verwaltbare Rubriken
 - Ausgaben mit Cover und PDF
+- interne Ausgabenplanung mit Heftspiegel, Platzhaltern, Seitenanteilen und eigenem Printstatus
 - statische CMS-Seiten und Website-Einstellungen
 - Rollen **Autor*in**, **Redaktion**, **Administration**
 - Passkeys und Authenticator-App; starke Anmeldung für Redaktion/Administration verpflichtend

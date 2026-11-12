@@ -106,7 +106,8 @@ class IssuePlanningPageTest extends TestCase
         $component = Livewire::actingAs($editor)->test(IssuePlanning::class)
             ->call('selectIssue', $issue->id)
             ->call('moveEntryToPage', $entry->id, 6, 0)
-            ->assertHasNoErrors();
+            ->assertHasNoErrors()
+            ->assertSee('Fortsetzung');
 
         self::assertSame(6, $entry->fresh()->page_start);
         $component->call('unplaceEntry', $entry->id)->assertHasNoErrors();
@@ -131,6 +132,29 @@ class IssuePlanningPageTest extends TestCase
 
         self::assertSame(2, $first->fresh()->page_start);
         self::assertSame(5, $second->fresh()->page_start);
+    }
+
+    public function test_editor_can_transfer_a_contribution_to_another_issue_from_the_list(): void
+    {
+        $editor = $this->user('redaktion');
+        $source = $this->issue('Ausgabe Quelle', 8);
+        $destination = $this->issue('Ausgabe Ziel', 12);
+        $entry = $this->entry($source, [
+            'title' => 'Verschobener Beitrag', 'page_start' => 4, 'page_span' => 1.5,
+            'internal_notes' => 'Absprachen bleiben erhalten',
+        ]);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $source->id)
+            ->set('viewMode', 'list')
+            ->set("transferTarget.{$entry->id}", $destination->id)
+            ->call('transferEntryToIssue', $entry->id)
+            ->assertHasNoErrors();
+
+        self::assertSame($destination->id, $entry->fresh()->issue_id);
+        self::assertNull($entry->fresh()->page_start);
+        self::assertSame('Absprachen bleiben erhalten', $entry->fresh()->internal_notes);
+        self::assertSame(1.5, $entry->fresh()->page_span);
     }
 
     public function test_authors_see_their_entries_without_editor_controls_or_internal_notes(): void

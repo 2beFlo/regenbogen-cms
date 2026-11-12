@@ -2,6 +2,7 @@
     @php($issues = $this->issues())
     @php($issue = $this->selectedIssue())
     @php($entries = $this->entries()->keyBy('id'))
+    @php($transferTargets = $this->canMutatePlan() && $viewMode === 'list' ? $this->transferTargets() : collect())
     @php($segments = $this->segments())
     @php($summary = $this->summary())
 
@@ -58,6 +59,7 @@
                             <p class="regenbogen-issue-planning__warning" role="alert">Die geplanten Inhalte überschreiten den Gesamtumfang um {{ number_format((float) $summary['overbooked_pages'], 2, ',', '') }} Seiten.</p>
                         @endif
                     @error('page_start') <p class="regenbogen-issue-planning__warning" role="alert">{{ $message }}</p> @enderror
+                    @error('issue_id') <p class="regenbogen-issue-planning__warning" role="alert">{{ $message }}</p> @enderror
                     @endif
                 </x-filament::section>
 
@@ -165,7 +167,7 @@
                 @endif
 
                 @if ($viewMode === 'list')
-                    @include('filament.pages.partials.issue-plan-list', ['entries' => $entries, 'issue' => $issue])
+                    @include('filament.pages.partials.issue-plan-list', ['entries' => $entries, 'issue' => $issue, 'transferTargets' => $transferTargets])
                 @else
                     @include('filament.pages.partials.issue-plan-spreads', ['entries' => $entries, 'issue' => $issue, 'spreads' => $this->spreads(), 'segments' => $segments])
                 @endif

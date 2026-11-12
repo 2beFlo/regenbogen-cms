@@ -47,6 +47,20 @@
                                 <button type="button" wire:click="toggleEntryLock({{ $entry->id }})" class="fi-btn fi-btn-size-sm fi-btn-color-gray">{{ $entry->is_locked ? 'Entsperren' : 'Sperren' }}</button>
                                 @if ($entry->page_start !== null) <button type="button" wire:click="unplaceEntry({{ $entry->id }})" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Aus Heftspiegel lösen</button> @endif
                             </div>
+                            @if ($transferTargets->isNotEmpty())
+                                <div class="regenbogen-issue-plan-row__manual-place">
+                                    <label>
+                                        <span class="sr-only">Zielausgabe für {{ $entry->display_title }}</span>
+                                        <select wire:model="transferTarget.{{ $entry->id }}" class="fi-input">
+                                            <option value="">In andere Ausgabe verschieben</option>
+                                            @foreach ($transferTargets as $targetIssue)
+                                                <option value="{{ $targetIssue->id }}">{{ $targetIssue->issue_code ?: $targetIssue->title }}</option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+                                    <button type="button" wire:click="transferEntryToIssue({{ $entry->id }})" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Verschieben</button>
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </article>

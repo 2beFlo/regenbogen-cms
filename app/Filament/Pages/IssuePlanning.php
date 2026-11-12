@@ -44,6 +44,9 @@ class IssuePlanning extends Page
     /** @var array<int, array{page_start: int|string|null, page_offset: int|float|string}> */
     public array $manualPlacement = [];
 
+    /** @var array<int, int|string|null> */
+    public array $transferTarget = [];
+
     public function getTitle(): string
     {
         return 'Ausgabenplanung';
@@ -193,6 +196,30 @@ class IssuePlanning extends Page
         }
 
         $this->moveEntryToPage($entryId, (int) $pageStart, (float) ($placement['page_offset'] ?? 0));
+    }
+
+    public function transferEntryToIssue(int $entryId): void
+    {
+        $this->assertCanMutate();
+        $source = $this->assertSelectedIssue();
+        $entry = $this->editableEntry($entryId);
+        $targetId = $this->transferTarget[$entryId] ?? null;
+        $target = $this->issues()->firstWhere('id', (int) $targetId);
+        abort_unless($target && $target->getKey() !== $source->getKey(), 404);
+
+        app(IssuePlanningService::class)->moveEntryToIssue($entry, $target);
+        unset($this->transferTarget[$entryId], $this->manualPlacement[$entryId]);
+        Notification::make()->success()->title('Beitrag verschoben')->body('Er wurde in der Zielausgabe unter „Noch nicht platziert“ übernommen.')->send();
+    }
+
+    /** @return Collection<int, Issue> */
+    public function transferTargets(): Collection
+    {
+        $issueId = $this->selectedIssue()?->getKey();
+
+        return $this->canMutatePlan()
+            ? $this->issues()->reject(fn (Issue $issue): bool => $issue->getKey() === $issueId)->values()
+            : new Collection();
     }
 
     public function unplaceEntry(int $entryId): void

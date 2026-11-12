@@ -111,6 +111,50 @@ class IssuePlanningService
         });
     }
 
+    public function moveEntryToIssue(IssueEntry $entry, Issue $destination): IssueEntry
+    {
+        return DB::transaction(function () use ($entry, $destination): IssueEntry {
+            $sourceId = (int) $entry->issue_id;
+            $destinationId = (int) $destination->getKey();
+
+            if ($sourceId === $destinationId) {
+                throw ValidationException::withMessages(['issue_id' => 'Wähle eine andere Zielausgabe aus.']);
+            }
+
+            $issues = Issue::query()->whereIn('id', [$sourceId, $destinationId])
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            $source = $issues->get($sourceId);
+            $target = $issues->get($destinationId);
+
+            if (! $source || ! $target) {
+                throw ValidationException::withMessages(['issue_id' => 'Die Quell- oder Zielausgabe ist nicht verfügbar.']);
+            }
+
+            $sourceEntries = $this->lockEntries($source);
+            $targetEntries = $this->lockEntries($target);
+            $lockedEntry = $sourceEntries->firstWhere('id', $entry->getKey());
+
+            if (! $lockedEntry) {
+                throw ValidationException::withMessages(['entry' => 'Der Heftplatz gehört nicht mehr zur Quellausgabe.']);
+            }
+
+            if ($lockedEntry->is_locked) {
+                throw ValidationException::withMessages(['issue_id' => 'Dieser Heftplatz ist gesperrt. Entsperre ihn zuerst.']);
+            }
+
+            if ($lockedEntry->article_id !== null && $targetEntries->contains('article_id', $lockedEntry->article_id)) {
+                throw ValidationException::withMessages(['issue_id' => 'Der verknüpfte Artikel ist in der Zielausgabe bereits eingeplant.']);
+            }
+
+            $lockedEntry->issue()->associate($target);
+            $lockedEntry->page_start = null;
+            $lockedEntry->page_offset = 0;
+            $lockedEntry->save();
+
+            return $lockedEntry->fresh(['article.authors', 'authors', 'responsibleUser']);
+        });
+    }
+
     public function setLocked(Issue $issue, int $entryId, bool $locked): IssueEntry
     {
         return DB::transaction(function () use ($issue, $entryId, $locked): IssueEntry {
@@ -221,7 +265,7 @@ class IssuePlanningService
             'author_ids.*' => ['integer', 'exists:authors,id'],
         ]);
         $validator->after(function ($validator) use (&$values): void {
-            $article = filled($values['article_id']) ? Article::query()->find($values['article_id']) : null;
+            $article = filled($values['article_id']) ? Article::withTrashed()->find($values['article_id']) : null;
 
             if (filled($values['article_id']) && ! $article) {
                 $validator->errors()->add('article_id', 'Der verknüpfte Artikel ist nicht verfügbar.');

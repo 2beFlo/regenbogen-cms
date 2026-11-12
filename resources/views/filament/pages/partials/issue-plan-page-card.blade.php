@@ -25,7 +25,7 @@
                         @if ($entry->placement_type === 'spread') <b>Doppelseite</b> @elseif ($segment['offset'] > 0) <b>Teilfläche</b> @endif
                         @if ($entry->is_locked) <b aria-label="Gesperrt">Gesperrt</b> @endif
                     </div>
-                    <strong>{{ $entry->display_title }}{{ $segment['offset'] > 0 ? ' · Fortsetzung' : '' }}</strong>
+                    <strong>{{ $entry->display_title }}{{ $pageNumber > $entry->page_start ? ' · Fortsetzung' : '' }}</strong>
                     <small>{{ number_format($entry->page_span, 2, ',', '') }} Seiten · {{ $this->editorialStatusLabel($entry) }} · {{ $this->printStatusLabel($entry) }}</small>
                     @if ($entry->display_authors->isNotEmpty()) <small>{{ $entry->display_authors->pluck('name')->join(', ') }}</small> @elseif ($entry->responsibleUser) <small>{{ $entry->responsibleUser->name }}</small> @endif
                     @if ($this->canSeeInternalNotes() && filled($entry->internal_notes)) <small class="regenbogen-flatplan-entry__note">{{ $entry->internal_notes }}</small> @endif

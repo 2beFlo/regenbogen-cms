@@ -35,6 +35,7 @@ class QualityCheckRegenbogen extends Command
         $this->checkSecurity();
         $this->checkPasskeys();
         $this->checkDatabase();
+        $this->checkIssuePlanning();
         $this->checkEditorialWorkflow();
         $this->checkRichTextIframes();
         $this->checkSeo();
@@ -166,12 +167,42 @@ class QualityCheckRegenbogen extends Command
         $this->line('• Datenbank');
 
         try {
-            foreach (['users', 'sessions', 'passkeys', 'articles', 'article_revisions', 'publication_events', 'rubrics'] as $table) {
+            foreach (['users', 'sessions', 'passkeys', 'articles', 'article_revisions', 'publication_events', 'rubrics', 'issues', 'issue_entries', 'issue_entry_author'] as $table) {
                 $this->expect(Schema::hasTable($table), 'Datenbanktabelle fehlt: '.$table);
             }
         } catch (Throwable $exception) {
             $this->failures[] = 'Datenbankprüfung fehlgeschlagen: '.$exception->getMessage();
         }
+    }
+
+    private function checkIssuePlanning(): void
+    {
+        $this->line('• Ausgabenplanung');
+
+        try {
+            $this->expect(Schema::hasColumns('issues', [
+                'issue_code', 'work_title', 'planned_publication_date', 'editorial_deadline', 'print_date',
+                'page_count', 'production_status', 'planning_notes',
+            ]), 'Ausgabenplanungsspalten fehlen in issues.');
+            $this->expect(Schema::hasColumns('issue_entries', [
+                'issue_id', 'article_id', 'title', 'content_type', 'page_start', 'page_offset', 'page_span',
+                'placement_type', 'is_locked', 'planning_status', 'print_status', 'responsible_user_id', 'due_at', 'internal_notes',
+            ]), 'Kernspalten für Heftplätze fehlen.');
+            $this->expect(Schema::hasColumns('authors', ['user_id']), 'Die explizite Verknüpfung zwischen Autor*innenprofilen und Benutzerkonten fehlt.');
+        } catch (Throwable $exception) {
+            $this->failures[] = 'Schema-Prüfung für Ausgabenplanung fehlgeschlagen: '.$exception->getMessage();
+        }
+
+        $this->expect(Route::has('filament.admin.pages.issue-planning'), 'Interne Filament-Seite für die Ausgabenplanung fehlt.');
+        $planningRoutes = collect(Route::getRoutes()->getRoutes())
+            ->filter(fn ($route): bool => str_ends_with(trim((string) $route->uri(), '/'), 'issue-planning'));
+        $this->expect(
+            $planningRoutes->isNotEmpty() && $planningRoutes->every(fn ($route): bool => str_starts_with((string) $route->uri(), 'admin/')),
+            'Die Ausgabenplanung darf nur unter dem authentifizierten /admin-Bereich erreichbar sein.',
+        );
+        $this->expect(class_exists(\App\Services\IssuePlanningService::class), 'IssuePlanningService fehlt.');
+        $this->expect(class_exists(\App\Support\IssuePlanning\FlatplanCalculator::class), 'FlatplanCalculator fehlt.');
+        $this->expect(class_exists(\App\Support\IssuePlanning\IssuePlanningAccess::class), 'IssuePlanningAccess fehlt.');
     }
 
 

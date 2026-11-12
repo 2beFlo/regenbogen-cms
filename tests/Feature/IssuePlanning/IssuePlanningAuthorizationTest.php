@@ -4,12 +4,14 @@ namespace Tests\Feature\IssuePlanning;
 
 use App\Enums\UserRole;
 use App\Enums\ArticleStatus;
+use App\Filament\Resources\Issues\IssueResource;
 use App\Models\Article;
 use App\Models\Author;
 use App\Models\Issue;
 use App\Models\User;
 use App\Support\IssuePlanning\IssuePlanningAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 class IssuePlanningAuthorizationTest extends TestCase
@@ -91,6 +93,24 @@ class IssuePlanningAuthorizationTest extends TestCase
             ->get('/admin/issue-planning')
             ->assertOk()
             ->assertSee('Ausgabenplanung');
+    }
+
+    public function test_an_issue_with_a_plan_cannot_be_deleted_through_the_cms_or_database(): void
+    {
+        $this->actingAs($this->user('redaktion'));
+        $issue = $this->issue();
+        $this->entry($issue, 'Geplanter Beitrag', 'Redaktionelle Notiz');
+
+        self::assertFalse(IssueResource::canDelete($issue));
+        try {
+            $issue->delete();
+            self::fail('A database constraint must protect planning records from issue deletion.');
+        } catch (QueryException) {
+            self::assertDatabaseHas('issue_entries', ['issue_id' => $issue->id, 'title' => 'Geplanter Beitrag']);
+        }
+
+        $emptyIssue = Issue::query()->create(['title' => 'Leere Ausgabe', 'page_count' => 16]);
+        self::assertTrue(IssueResource::canDelete($emptyIssue));
     }
 
     private function user(string $role, ?string $email = null): User

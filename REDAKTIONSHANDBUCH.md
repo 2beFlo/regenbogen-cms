@@ -42,6 +42,38 @@ Unter **Ausgaben**:
 
 Wird eine neue Ausgabe als aktuell markiert, wird die bisherige automatisch zur normalen Archivausgabe.
 
+## Ausgabenplanung und Heftspiegel
+
+Die **Ausgabenplanung** ist eine interne Redaktionsseite. Die öffentliche Ausgabe und die dort verknüpften Onlineartikel bleiben davon getrennt. Der Heftplatz hält fest, was in einer Printausgabe erscheinen soll; er veröffentlicht keinen Artikel und ändert nicht dessen Zuordnung im Onlinearchiv.
+
+### Ausgabe vorbereiten
+
+1. Unter **Ausgaben** eine Ausgabe anlegen oder öffnen.
+2. Eine eindeutige **Ausgabennummer**, einen Arbeitstitel und bei Bedarf Redaktionsschluss sowie Drucktermin eintragen.
+3. Die **Gesamtseitenzahl** festlegen. Sie ist frei wählbar; auch ungerade Zahlen sind erlaubt. Wird sie später verkleinert, blockieren belegte Seiten die Änderung. Erst nach dem Verschieben oder Lösen der betroffenen Heftplätze kann gespeichert werden. Eine Ausgabe mit Heftplätzen kann nicht gelöscht werden; verschiebe deren Einträge vorher in eine andere Ausgabe.
+4. Unter **Ausgabenplanung** die Ausgabe öffnen. Jede freie Seite wird automatisch im Heftspiegel angezeigt.
+
+### Beiträge einplanen
+
+- Über **Beitrag einplanen** einen Platzhalter erstellen. Ein CMS-Artikel ist dafür nicht erforderlich.
+- Für einen vorhandenen Artikel im Formular den CMS-Artikel auswählen. Überschrift, Autor*innen und redaktioneller Artikelstatus werden dann aus dem Artikel angezeigt; die Printproduktion bleibt separat.
+- Umfang als Seitenanteil eintragen. Mehrseitige Beiträge beginnen auf der gewählten Startseite und laufen auf die folgenden Seiten weiter. Kleine Beiträge können sich eine Seite teilen, wenn Startseite und Seitenanteil so gesetzt sind, dass sie einander nicht überlappen.
+- Ein Beitrag ohne feste Position bleibt unter **Noch nicht platziert** und reserviert dort weiterhin seinen Seitenumfang.
+- Eine echte **Doppelseite** belegt genau zwei gegenüberliegende Seiten und beginnt auf der geraden linken Seite. Ein normaler zweitseitiger Text bleibt davon unterscheidbar.
+- Der WerDi-Comic lässt sich als Inhaltsart „WerDi-Comic“ mit einer ganzen A5-Seite einplanen. Er ist nicht verpflichtend.
+
+Im Heftspiegel können Redaktionsmitglieder Beiträge ziehen und ablegen. Über **Liste** gibt es dieselben Seitenfelder für die manuelle Platzierung und Nutzung auf kleineren Bildschirmen. Sperren schützt einen festen Platz vor versehentlichem Verschieben; zum Ändern zuerst entsperren. Platzierte Beiträge lassen sich auch aus dem Spiegel lösen, ohne sie zu löschen.
+
+Über die Listenansicht kann ein Beitrag in eine andere Ausgabe verschoben werden. Er erscheint dort zunächst unter **Noch nicht platziert**; Artikelverknüpfung, Autor*innen, Umfang, Notizen und Status bleiben erhalten. Ein vorhandener Artikel wird dadurch nicht aus seinem Onlinearchiv verschoben.
+
+### Status und Rechte
+
+Der redaktionelle Stand eines verknüpften Artikels stammt weiterhin aus dem Artikelworkflow. Platzhalter verwenden den Planungsstand **Idee**, **In Planung**, **Recherche**, **In Arbeit** oder **Redaktionell fertig**. Der Printstatus läuft unabhängig davon von **Vorgesehen** über **Bereit für den Satz**, **Im Satz**, **Gesetzte Fassung vorhanden** und **Schlusskorrektur** bis zur **Druckfreigabe**. Eine Druckfreigabe veröffentlicht nichts online.
+
+Redaktion und Administration sehen und bearbeiten alle Ausgaben. Autor*innen sehen nur Heftplätze, die ihnen direkt, über den Artikel oder über ihr ausdrücklich mit einem Benutzerkonto verknüpftes Autor*innenprofil zugeordnet sind. Interne Notizen und Bearbeitungsaktionen bleiben ihnen verborgen. Die Profilverknüpfung wird in **Autor*innen** über „Redakteur*innen-Konto“ gepflegt; eine Zuordnung wird nicht anhand eines gleichen Namens oder einer E-Mail-Adresse erraten.
+
+Die Kapazitätsübersicht trennt platzierte Seiten, noch nicht platzierte Reservierungen und freie Kapazität. Wenn Reservierungen den verfügbaren Gesamtumfang überschreiten, wird die Überbuchung angezeigt.
+
 ## Normale Seiten
 
 Unter **Seiten** werden z. B. gepflegt:

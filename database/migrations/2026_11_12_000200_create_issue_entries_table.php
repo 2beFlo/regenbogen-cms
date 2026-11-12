@@ -9,7 +9,10 @@ return new class extends Migration {
     {
         Schema::create('issue_entries', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('issue_id')->constrained()->cascadeOnDelete();
+            // A planning record contains editorial decisions and internal notes.
+            // Refuse issue deletion while plans exist; deleting an issue must not
+            // silently erase that work.
+            $table->foreignId('issue_id')->constrained()->restrictOnDelete();
             $table->foreignId('article_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
             $table->string('content_type')->default('other');

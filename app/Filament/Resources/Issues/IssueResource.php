@@ -34,6 +34,6 @@ class IssueResource extends Resource
     public static function canViewAny(): bool { return (bool) auth()->user()?->isEditorial(); }
     public static function canCreate(): bool { return (bool) auth()->user()?->isEditorial(); }
     public static function canEdit($record): bool { return (bool) auth()->user()?->isEditorial(); }
-    public static function canDelete($record): bool { return (bool) auth()->user()?->isEditorial(); }
+    public static function canDelete($record): bool { return (bool) auth()->user()?->isEditorial() && $record->entries()->doesntExist(); }
     public static function getPages(): array { return ['index'=>Pages\ListIssues::route('/'),'create'=>Pages\CreateIssue::route('/create'),'edit'=>Pages\EditIssue::route('/{record}/edit')]; }
 }
