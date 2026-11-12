@@ -2,12 +2,20 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\ArticleStatus;
+use App\Enums\UserRole;
+use App\Filament\Resources\Articles\ArticleResource;
+use App\Models\Article;
+use App\Models\Author;
 use App\Models\Issue;
 use App\Models\IssueEntry;
+use App\Models\User;
+use App\Services\IssuePlanningService;
 use App\Support\IssuePlanning\FlatplanCalculator;
 use App\Support\IssuePlanning\IssuePlanningAccess;
 use BackedEnum;
 use Filament\Pages\Page;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
 
 class IssuePlanning extends Page
@@ -26,6 +34,16 @@ class IssuePlanning extends Page
 
     public string $viewMode = 'board';
 
+    public bool $entryFormOpen = false;
+
+    public ?int $editingEntryId = null;
+
+    /** @var array<string, mixed> */
+    public array $entryForm = [];
+
+    /** @var array<int, array{page_start: int|string|null, page_offset: int|float|string}> */
+    public array $manualPlacement = [];
+
     public function getTitle(): string
     {
         return 'Ausgabenplanung';
@@ -42,6 +60,7 @@ class IssuePlanning extends Page
         $issues = $this->issues();
         $issue = $requestedIssue ? $issues->firstWhere('id', (int) $requestedIssue) : null;
         $this->selectedIssueId = $issue?->getKey() ?? $issues->first()?->getKey();
+        $this->syncManualPlacements();
     }
 
     /** @return Collection<int, Issue> */
@@ -83,6 +102,18 @@ class IssuePlanning extends Page
     {
         abort_unless($this->issues()->contains(fn (Issue $issue): bool => $issue->getKey() === $issueId), 403);
         $this->selectedIssueId = $issueId;
+        $this->entryFormOpen = false;
+        $this->editingEntryId = null;
+        $this->syncManualPlacements();
+    }
+
+    public function updatedSelectedIssueId(): void
+    {
+        if (! $this->issues()->contains(fn (Issue $issue): bool => $issue->getKey() === (int) $this->selectedIssueId)) {
+            $this->selectedIssueId = $this->issues()->first()?->getKey();
+        }
+
+        $this->syncManualPlacements();
     }
 
     public function updatedViewMode(string $viewMode): void
@@ -90,6 +121,173 @@ class IssuePlanning extends Page
         if (! in_array($viewMode, ['board', 'list'], true)) {
             $this->viewMode = 'list';
         }
+    }
+
+    public function openEntryForm(?int $pageStart = null): void
+    {
+        $this->assertCanMutate();
+        $this->assertSelectedIssue();
+        $this->resetValidation();
+        $this->editingEntryId = null;
+        $this->entryForm = $this->defaultEntryForm($pageStart);
+        $this->entryFormOpen = true;
+    }
+
+    public function openEditEntry(int $entryId): void
+    {
+        $this->assertCanMutate();
+        $this->resetValidation();
+        $entry = $this->editableEntry($entryId);
+        $this->editingEntryId = $entry->getKey();
+        $this->entryForm = [
+            'article_id' => $entry->article_id,
+            'title' => $entry->article?->title ?: $entry->title,
+            'content_type' => $entry->content_type,
+            'page_start' => $entry->page_start,
+            'page_offset' => $entry->page_offset,
+            'page_span' => $entry->page_span,
+            'placement_type' => $entry->placement_type,
+            'is_locked' => $entry->is_locked,
+            'planning_status' => $entry->planning_status,
+            'print_status' => $entry->print_status,
+            'responsible_user_id' => $entry->responsible_user_id,
+            'due_at' => $entry->due_at?->format('Y-m-d'),
+            'internal_notes' => $entry->internal_notes,
+            'author_ids' => $entry->authors()->pluck('authors.id')->all(),
+        ];
+        $this->entryFormOpen = true;
+    }
+
+    public function closeEntryForm(): void
+    {
+        $this->resetValidation();
+        $this->entryFormOpen = false;
+        $this->editingEntryId = null;
+    }
+
+    public function saveEntry(): void
+    {
+        $this->assertCanMutate();
+        $issue = $this->assertSelectedIssue();
+        $entry = $this->editingEntryId ? $this->editableEntry($this->editingEntryId) : null;
+
+        app(IssuePlanningService::class)->saveEntry($issue, $entry, $this->entryForm);
+        $this->entryFormOpen = false;
+        $this->editingEntryId = null;
+        Notification::make()->success()->title('Heftplatz gespeichert')->send();
+    }
+
+    public function moveEntryToPage(int $entryId, int $pageStart, float $pageOffset = 0): void
+    {
+        $this->assertCanMutate();
+        app(IssuePlanningService::class)->moveEntry($this->assertSelectedIssue(), $entryId, $pageStart, $pageOffset);
+        Notification::make()->success()->title('Beitrag verschoben')->send();
+    }
+
+    public function manualMoveEntry(int $entryId): void
+    {
+        $placement = $this->manualPlacement[$entryId] ?? [];
+        $pageStart = $placement['page_start'] ?? null;
+        if (! is_numeric($pageStart)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['page_start' => 'Wähle zuerst eine Zielseite aus.']);
+        }
+
+        $this->moveEntryToPage($entryId, (int) $pageStart, (float) ($placement['page_offset'] ?? 0));
+    }
+
+    public function unplaceEntry(int $entryId): void
+    {
+        $this->assertCanMutate();
+        app(IssuePlanningService::class)->unplaceEntry($this->assertSelectedIssue(), $entryId);
+        Notification::make()->success()->title('Beitrag in „Noch nicht platziert“ verschoben')->send();
+    }
+
+    public function toggleEntryLock(int $entryId): void
+    {
+        $this->assertCanMutate();
+        $entry = $this->editableEntry($entryId);
+        $locked = ! $entry->is_locked;
+        app(IssuePlanningService::class)->setLocked($this->assertSelectedIssue(), $entryId, $locked);
+        Notification::make()->success()->title($locked ? 'Heftplatz gesperrt' : 'Heftplatz entsperrt')->send();
+    }
+
+    /** @return array<int, string> */
+    public function articleOptions(): array
+    {
+        if (! $this->canMutatePlan()) {
+            return [];
+        }
+
+        return Article::query()->orderBy('title')->pluck('title', 'id')->all();
+    }
+
+    /** @return array<int, string> */
+    public function authorOptions(): array
+    {
+        return $this->canMutatePlan() ? Author::query()->orderBy('name')->pluck('name', 'id')->all() : [];
+    }
+
+    /** @return array<int, string> */
+    public function responsibleUserOptions(): array
+    {
+        return $this->canMutatePlan()
+            ? User::query()->where('role', UserRole::Redakteur->value)->orderBy('name')->pluck('name', 'id')->all()
+            : [];
+    }
+
+    public function canEditLinkedArticle(IssueEntry $entry): bool
+    {
+        $user = auth()->user();
+
+        return $entry->article !== null && ($user?->isEditorial()
+            || $entry->article->created_by === $user?->getKey() && $entry->article->status === ArticleStatus::Draft);
+    }
+
+    public function articleEditUrl(IssueEntry $entry): ?string
+    {
+        return $this->canEditLinkedArticle($entry)
+            ? ArticleResource::getUrl('edit', ['record' => $entry->article])
+            : null;
+    }
+
+    /** @return array<string, string> */
+    public function contentTypeOptions(): array
+    {
+        return [
+            'article' => 'Artikel', 'interview' => 'Interview', 'comment' => 'Kommentar', 'gloss' => 'Glosse',
+            'comic' => 'WerDi-Comic', 'cover' => 'Titelblatt', 'photo' => 'Fotoseite', 'infographic' => 'Infografik',
+            'events' => 'Termine', 'imprint' => 'Impressum', 'other' => 'Sonstiger Inhalt',
+        ];
+    }
+
+    public function editorialStatusLabel(IssueEntry $entry): string
+    {
+        if ($entry->article) {
+            return $entry->article->status?->label() ?? 'Unbekannt';
+        }
+
+        return match ($entry->planning_status) {
+            'idea' => 'Idee', 'planned' => 'In Planung', 'research' => 'Recherche',
+            'writing' => 'In Arbeit', 'ready' => 'Redaktionell fertig', default => 'Unbekannt',
+        };
+    }
+
+    public function printStatusLabel(IssueEntry $entry): string
+    {
+        return match ($entry->print_status) {
+            'planned' => 'Vorgesehen', 'ready_for_layout' => 'Bereit für den Satz', 'in_layout' => 'Im Satz',
+            'layout_ready' => 'Gesetzte Fassung vorhanden', 'proofing' => 'Schlusskorrektur',
+            'approved' => 'Druckfreigabe', default => 'Unbekannt',
+        };
+    }
+
+    public function issueProductionStatusLabel(?Issue $issue): string
+    {
+        return match ($issue?->production_status) {
+            'editorial' => 'Redaktion', 'layout' => 'Im Satz', 'proofing' => 'Schlusskorrektur',
+            'approved' => 'Druckfreigabe', 'printed' => 'Gedruckt', 'archived' => 'Abgeschlossen',
+            default => 'In Planung',
+        };
     }
 
     /** @return array<int, array{left: ?int, right: ?int}> */
@@ -128,5 +326,47 @@ class IssuePlanning extends Page
             'print_status' => $entry->print_status,
             'article_status' => $entry->article?->status?->value,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function defaultEntryForm(?int $pageStart): array
+    {
+        return [
+            'article_id' => '', 'title' => '', 'content_type' => 'other', 'page_start' => $pageStart,
+            'page_offset' => 0, 'page_span' => 1, 'placement_type' => 'normal', 'is_locked' => false,
+            'planning_status' => 'idea', 'print_status' => 'planned', 'responsible_user_id' => '',
+            'due_at' => '', 'internal_notes' => '', 'author_ids' => [],
+        ];
+    }
+
+    private function assertCanMutate(): void
+    {
+        abort_unless($this->canMutatePlan(), 403);
+    }
+
+    private function syncManualPlacements(): void
+    {
+        $this->manualPlacement = [];
+
+        foreach ($this->entries() as $entry) {
+            $this->manualPlacement[$entry->getKey()] = [
+                'page_start' => $entry->page_start ?? '',
+                'page_offset' => $entry->page_offset,
+            ];
+        }
+    }
+
+    private function assertSelectedIssue(): Issue
+    {
+        $issue = $this->selectedIssue();
+        abort_unless($issue && app(IssuePlanningAccess::class)->canViewIssue(auth()->user(), $issue), 404);
+
+        return $issue;
+    }
+
+    private function editableEntry(int $entryId): IssueEntry
+    {
+        return $this->entries()->firstWhere('id', $entryId)
+            ?? abort(404);
     }
 }

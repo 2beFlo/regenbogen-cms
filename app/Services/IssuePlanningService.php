@@ -197,6 +197,11 @@ class IssuePlanningService
             'author_ids' => [],
         ];
         $values = array_merge($defaults, $entry?->only($entry->getFillable()) ?? [], $data);
+        foreach (['article_id', 'page_start', 'responsible_user_id', 'due_at', 'internal_notes'] as $nullableField) {
+            if (($values[$nullableField] ?? null) === '') {
+                $values[$nullableField] = null;
+            }
+        }
 
         $validator = Validator::make($values, [
             'article_id' => ['nullable', 'integer', 'exists:articles,id'],
