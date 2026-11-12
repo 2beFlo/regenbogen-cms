@@ -42,6 +42,22 @@ class IssuePlanningPageTest extends TestCase
         }
     }
 
+    public function test_it_prefers_an_open_planning_issue_without_a_publication_date_to_the_current_issue(): void
+    {
+        $editor = $this->user('redaktion');
+        Issue::query()->create([
+            'title' => 'Aktuelle Ausgabe', 'page_count' => 8, 'is_current' => true,
+            'published_at' => '2026-10-01', 'production_status' => 'printed',
+        ]);
+        $planned = Issue::query()->create([
+            'title' => 'Offene geplante Ausgabe', 'page_count' => 12, 'production_status' => 'planning',
+        ]);
+
+        $component = Livewire::actingAs($editor)->test(IssuePlanning::class);
+
+        self::assertSame($planned->id, $component->instance()->selectedIssueId);
+    }
+
     public function test_an_unplaced_cover_placeholder_can_be_repaired_in_place(): void
     {
         $editor = $this->user('redaktion');

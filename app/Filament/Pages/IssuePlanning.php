@@ -535,6 +535,11 @@ class IssuePlanning extends Page
                 && $issue->production_status !== 'archived')
             ->sortBy(fn (Issue $issue): int => $issue->planned_publication_date->getTimestamp())
             ->first()
+            ?? $issues
+                ->filter(fn (Issue $issue): bool => $issue->published_at === null
+                    && $issue->production_status === 'planning')
+                ->sortByDesc(fn (Issue $issue): int => (int) $issue->getKey())
+                ->first()
             ?? $issues->firstWhere('is_current', true)
             ?? $issues->first();
     }
