@@ -325,6 +325,7 @@
 .regenbogen-issue-planning { display:grid; gap:1rem; }
 .regenbogen-issue-planning__toolbar,.regenbogen-issue-planning__issue-head { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
 .regenbogen-issue-planning__toolbar-actions,.regenbogen-issue-planning__view-switch { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; }
+.regenbogen-issue-planning__empty { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
 .regenbogen-issue-planning__issue-head h2 { margin:0; font-size:1.35rem; font-weight:800; }
 .regenbogen-issue-planning__issue-head p { margin:.25rem 0 0; color:var(--gray-500); }
 .regenbogen-issue-planning__view-switch { padding:.2rem; border:1px solid var(--gray-200); border-radius:.7rem; background:var(--gray-50); }
@@ -343,6 +344,8 @@
 .regenbogen-issue-entry-form label { display:grid; align-content:start; gap:.35rem; min-width:0; }
 .regenbogen-issue-entry-form label > span { font-size:.84rem; font-weight:700; }
 .regenbogen-issue-entry-form .fi-input { width:100%; min-width:0; }
+.regenbogen-issue-entry-form__readonly { display:flex; align-items:center; min-height:2.5rem; background:var(--gray-50); }
+.regenbogen-issue-entry-form__info { padding:.75rem 1rem; border-radius:.5rem; background:var(--gray-50); color:var(--gray-600); font-size:.85rem; }
 .regenbogen-issue-entry-form__multiple { min-height:6rem; }
 .regenbogen-issue-entry-form label small { color:var(--gray-500); font-size:.75rem; }
 .regenbogen-issue-entry-form__wide { grid-column:1 / -1; }

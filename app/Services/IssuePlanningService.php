@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class IssuePlanningService
 {
     private const CONTENT_TYPES = [
-        'article', 'interview', 'comment', 'gloss', 'comic', 'cover', 'photo', 'infographic', 'events', 'imprint', 'other',
+        'article', 'interview', 'comment', 'gloss', 'comic', 'cover', 'closing_page', 'photo', 'infographic', 'events', 'imprint', 'other',
     ];
 
     private const PLANNING_STATUSES = ['idea', 'planned', 'research', 'writing', 'ready'];
@@ -35,17 +35,13 @@ class IssuePlanningService
                 }
             }
 
-            $values = $this->validatedEntryData($entry, $data);
+            $values = $this->validatedEntryData($lockedIssue, $entries, $entry, $data);
+            $this->assertArticleAvailable($values['article_id'] === null ? null : (int) $values['article_id'], $entry);
             if ($entry?->is_locked && $this->placementChanged($entry, $values)) {
                 throw ValidationException::withMessages(['page_start' => 'Dieser Heftplatz ist gesperrt. Entsperre ihn zuerst.']);
             }
             if ($entry !== null && array_key_exists('is_locked', $data) && (bool) $data['is_locked'] !== $entry->is_locked) {
                 throw ValidationException::withMessages(['is_locked' => 'Die Sperre wird über die Sperren-Funktion geändert.']);
-            }
-            if ($values['article_id'] !== null && $entries->contains(
-                fn (IssueEntry $item): bool => $item->article_id === (int) $values['article_id'] && $item->getKey() !== $entry?->getKey()
-            )) {
-                throw ValidationException::withMessages(['article_id' => 'Dieser Artikel ist in dieser Ausgabe bereits eingeplant.']);
             }
             $candidateId = $entry?->getKey() ?? -1;
             $this->assertCandidateFits($lockedIssue, $entries, $values, $candidateId);
@@ -56,7 +52,7 @@ class IssuePlanningService
             $saved->save();
 
             if (array_key_exists('author_ids', $data)) {
-                $saved->authors()->sync($data['author_ids'] ?? []);
+                $saved->authors()->sync($saved->article_id === null ? ($data['author_ids'] ?? []) : []);
             }
 
             return $saved->fresh(['article.authors', 'authors', 'responsibleUser']);
@@ -77,6 +73,8 @@ class IssuePlanningService
             if ($entry->is_locked) {
                 throw ValidationException::withMessages(['page_start' => 'Dieser Heftplatz ist gesperrt. Entsperre ihn zuerst.']);
             }
+
+            $this->assertEntryIsMovable($entry);
 
             return $this->saveEntry($lockedIssue, $entry, [
                 ...$entry->only($entry->getFillable()),
@@ -101,6 +99,8 @@ class IssuePlanningService
             if ($entry->is_locked) {
                 throw ValidationException::withMessages(['page_start' => 'Dieser Heftplatz ist gesperrt. Entsperre ihn zuerst.']);
             }
+
+            $this->assertEntryIsMovable($entry);
 
             return $this->saveEntry($lockedIssue, $entry, [
                 ...$entry->only($entry->getFillable()),
@@ -141,6 +141,8 @@ class IssuePlanningService
             if ($lockedEntry->is_locked) {
                 throw ValidationException::withMessages(['issue_id' => 'Dieser Heftplatz ist gesperrt. Entsperre ihn zuerst.']);
             }
+
+            $this->assertEntryIsMovable($lockedEntry);
 
             if ($lockedEntry->article_id !== null && $targetEntries->contains('article_id', $lockedEntry->article_id)) {
                 throw ValidationException::withMessages(['issue_id' => 'Der verknüpfte Artikel ist in der Zielausgabe bereits eingeplant.']);
@@ -189,9 +191,46 @@ class IssuePlanningService
                 'page_count' => ['required', 'integer', 'min:1', 'max:65535'],
             ])->validate();
 
-            $this->assertNoOccupiedPagesBeyond((int) $newPageCount, $entries);
+            $newPageCount = (int) $newPageCount;
+            $closingPage = $entries->firstWhere('content_type', 'closing_page');
+            $pageCountChanged = $newPageCount !== (int) $lockedIssue->page_count;
+            $entriesToValidate = $pageCountChanged && $closingPage
+                ? $entries->reject(fn (IssueEntry $entry): bool => $entry->getKey() === $closingPage->getKey())->values()
+                : $entries;
+
+            $this->assertNoOccupiedPagesBeyond($newPageCount, $entriesToValidate);
+
+            if ($pageCountChanged && $closingPage) {
+                if ($newPageCount < 2) {
+                    throw ValidationException::withMessages(['page_count' => 'Die Ausgabe benötigt mindestens zwei Seiten für die geplante Schlussseite.']);
+                }
+
+                $candidateIssue = clone $lockedIssue;
+                $candidateIssue->page_count = $newPageCount;
+                $candidate = [
+                    'page_start' => $newPageCount,
+                    'page_offset' => 0,
+                    'page_span' => 1,
+                    'placement_type' => 'normal',
+                ];
+                try {
+                    $this->assertCandidateFits($candidateIssue, $entriesToValidate, $candidate, $closingPage->getKey());
+                } catch (ValidationException $exception) {
+                    throw ValidationException::withMessages([
+                        'page_count' => 'Die Schlussseite kann nicht auf die neue letzte Seite verschoben werden, weil dort bereits Inhalt eingeplant ist.',
+                    ]);
+                }
+            }
+
             $lockedIssue->fill($data);
             $lockedIssue->save();
+
+            if ($pageCountChanged && $closingPage) {
+                $closingPage->page_start = $newPageCount;
+                $closingPage->page_offset = 0;
+                $closingPage->page_span = 1;
+                $closingPage->save();
+            }
 
             return $lockedIssue->fresh();
         });
@@ -222,7 +261,7 @@ class IssuePlanningService
     /** @param array<string, mixed> $data
      *  @return array<string, mixed>
      */
-    private function validatedEntryData(?IssueEntry $entry, array $data): array
+    private function validatedEntryData(Issue $issue, Collection $entries, ?IssueEntry $entry, array $data): array
     {
         $defaults = [
             'article_id' => null,
@@ -264,7 +303,7 @@ class IssuePlanningService
             'author_ids' => ['array'],
             'author_ids.*' => ['integer', 'exists:authors,id'],
         ]);
-        $validator->after(function ($validator) use (&$values): void {
+        $validator->after(function ($validator) use (&$values, $issue, $entries, $entry): void {
             $article = filled($values['article_id']) ? Article::withTrashed()->find($values['article_id']) : null;
 
             if (filled($values['article_id']) && ! $article) {
@@ -277,6 +316,7 @@ class IssuePlanningService
 
             if ($article) {
                 $values['title'] = $article->title;
+                $values['content_type'] = 'article';
             }
 
             if ($values['page_start'] === null) {
@@ -290,11 +330,68 @@ class IssuePlanningService
                     || abs((float) $values['page_span'] - 2.0) > 0.000001)) {
                 $validator->errors()->add('page_start', 'Eine Doppelseite beginnt auf einer geraden linken Seite und belegt genau zwei Seiten.');
             }
+
+            $type = $values['content_type'];
+            if (in_array($type, ['cover', 'closing_page'], true)) {
+                $fixedPage = $type === 'cover' ? 1 : (int) $issue->page_count;
+                $fixedTitle = $type === 'cover' ? 'Titelseite' : 'Schlussseite';
+
+                if ($article) {
+                    $validator->errors()->add('article_id', 'Titelseite und Schlussseite werden als Platzhalter ohne CMS-Artikel geführt.');
+                }
+
+                if ($type === 'closing_page' && (int) $issue->page_count < 2) {
+                    $validator->errors()->add('page_start', 'Eine separate Schlussseite benötigt mindestens zwei Seiten.');
+                }
+
+                if ((int) $values['page_start'] !== $fixedPage
+                    || (float) $values['page_offset'] !== 0.0
+                    || abs((float) $values['page_span'] - 1.0) > 0.000001
+                    || $values['placement_type'] !== 'normal') {
+                    $validator->errors()->add('page_start', 'Der strukturelle Platzhalter ist an seine feste Heftseite gebunden.');
+                }
+
+                if ($entries->contains(fn (IssueEntry $item): bool => $item->content_type === $type && $item->getKey() !== $entry?->getKey())) {
+                    $validator->errors()->add('content_type', 'Dieser Platzhalter ist in der Ausgabe bereits angelegt.');
+                }
+
+                $values['title'] = $fixedTitle;
+            } elseif ((int) $values['page_start'] === 1) {
+                $validator->errors()->add('page_start', 'Seite 1 ist für den Titelseiten-Platzhalter reserviert und enthält keine Artikel.');
+            }
         });
 
         $validator->validate();
 
         return collect($values)->except('author_ids')->all();
+    }
+
+    private function assertArticleAvailable(?int $articleId, ?IssueEntry $entry): void
+    {
+        if ($articleId === null) {
+            return;
+        }
+
+        $article = Article::withTrashed()->whereKey($articleId)->lockForUpdate()->first();
+        if (! $article) {
+            throw ValidationException::withMessages(['article_id' => 'Der verknüpfte Artikel ist nicht verfügbar.']);
+        }
+
+        if ((int) $entry?->article_id === $articleId) {
+            return;
+        }
+
+        if (IssueEntry::query()->where('article_id', $articleId)
+            ->exists()) {
+            throw ValidationException::withMessages(['article_id' => 'Dieser CMS-Artikel ist bereits in einer anderen Ausgabe eingeplant.']);
+        }
+    }
+
+    private function assertEntryIsMovable(IssueEntry $entry): void
+    {
+        if (in_array($entry->content_type, ['cover', 'closing_page'], true)) {
+            throw ValidationException::withMessages(['page_start' => 'Titelseite und Schlussseite bleiben auf ihren festen Heftseiten.']);
+        }
     }
 
     /** @param Collection<int, IssueEntry> $entries

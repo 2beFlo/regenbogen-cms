@@ -32,9 +32,11 @@
                     @if ($this->canMutatePlan())
                         <div class="regenbogen-flatplan-entry__actions">
                             <button type="button" wire:click="openEditEntry({{ $entry->id }})" aria-label="Eintrag bearbeiten">Bearbeiten</button>
-                            <button type="button" wire:click="toggleEntryLock({{ $entry->id }})">{{ $entry->is_locked ? 'Entsperren' : 'Sperren' }}</button>
+                            @if (! in_array($entry->content_type, ['cover', 'closing_page'], true))
+                                <button type="button" wire:click="toggleEntryLock({{ $entry->id }})">{{ $entry->is_locked ? 'Entsperren' : 'Sperren' }}</button>
+                            @endif
                             @if ($this->articleEditUrl($entry)) <a href="{{ $this->articleEditUrl($entry) }}">Artikel öffnen</a> @endif
-                            @if ($entry->page_start !== null) <button type="button" wire:click="unplaceEntry({{ $entry->id }})">Lösen</button> @endif
+                            @if ($entry->page_start !== null && ! in_array($entry->content_type, ['cover', 'closing_page'], true)) <button type="button" wire:click="unplaceEntry({{ $entry->id }})">Lösen</button> @endif
                         </div>
                     @elseif ($this->articleEditUrl($entry))
                         <a class="regenbogen-flatplan-entry__article" href="{{ $this->articleEditUrl($entry) }}">Eigenen Artikel öffnen</a>
@@ -43,8 +45,17 @@
             @endif
         @empty
             <div class="regenbogen-flatplan-free">
-                <span>Frei</span>
-                @if ($this->canMutatePlan()) <button type="button" wire:click="openEntryForm({{ $pageNumber }})">Beitrag hier einplanen</button> @endif
+                <span>{{ $pageNumber === 1 ? 'Titelseite' : 'Frei' }}</span>
+                @if ($this->canMutatePlan())
+                    @if ($pageNumber === 1)
+                        <button type="button" wire:click="openCoverPlaceholder">Titelseite als Platzhalter anlegen</button>
+                    @else
+                        <button type="button" wire:click="openEntryForm({{ $pageNumber }})">Beitrag hier einplanen</button>
+                        @if ($pageNumber === (int) $this->selectedIssue()?->page_count)
+                            <button type="button" wire:click="openClosingPagePlaceholder">Schlussseite als Platzhalter einplanen</button>
+                        @endif
+                    @endif
+                @endif
             </div>
         @endforelse
     </div>

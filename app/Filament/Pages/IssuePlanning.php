@@ -3,7 +3,6 @@
 namespace App\Filament\Pages;
 
 use App\Enums\ArticleStatus;
-use App\Enums\UserRole;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Models\Article;
 use App\Models\Author;
@@ -16,6 +15,7 @@ use App\Support\IssuePlanning\IssuePlanningAccess;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class IssuePlanning extends Page
@@ -130,10 +130,88 @@ class IssuePlanning extends Page
     {
         $this->assertCanMutate();
         $this->assertSelectedIssue();
+
+        if ($pageStart === 1) {
+            $this->openCoverPlaceholder();
+
+            return;
+        }
+
         $this->resetValidation();
         $this->editingEntryId = null;
         $this->entryForm = $this->defaultEntryForm($pageStart);
         $this->entryFormOpen = true;
+    }
+
+    public function openCoverPlaceholder(): void
+    {
+        $this->openStructuralPlaceholder('cover', 1, 'Titelseite');
+    }
+
+    public function openClosingPagePlaceholder(): void
+    {
+        $issue = $this->assertSelectedIssue();
+        if ((int) $issue->page_count < 2) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'page_start' => 'Eine separate Schlussseite benötigt mindestens zwei Seiten.',
+            ]);
+        }
+
+        $this->openStructuralPlaceholder('closing_page', (int) $issue->page_count, 'Schlussseite');
+    }
+
+    private function openStructuralPlaceholder(string $contentType, int $pageStart, string $title): void
+    {
+        $this->assertCanMutate();
+        $issue = $this->assertSelectedIssue();
+        $this->resetValidation();
+        $this->editingEntryId = null;
+
+        if ($issue->entries()->where('content_type', $contentType)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'page_start' => 'Dieser Platzhalter ist in der Ausgabe bereits angelegt.',
+            ]);
+        }
+
+        $this->entryForm = [
+            ...$this->defaultEntryForm($pageStart),
+            'title' => $title,
+            'content_type' => $contentType,
+            'page_span' => 1,
+        ];
+        $this->entryFormOpen = true;
+    }
+
+    public function isStructuralEntryForm(): bool
+    {
+        return in_array($this->entryForm['content_type'] ?? null, ['cover', 'closing_page'], true);
+    }
+
+    public function selectedArticle(): ?Article
+    {
+        $articleId = $this->entryForm['article_id'] ?? null;
+
+        return filled($articleId) && ! $this->isStructuralEntryForm()
+            ? Article::withTrashed()->with(['authors', 'rubric'])->find((int) $articleId)
+            : null;
+    }
+
+    public function updatedEntryFormArticleId(mixed $articleId): void
+    {
+        if (blank($articleId) || $this->isStructuralEntryForm()) {
+            return;
+        }
+
+        $article = Article::query()->with('authors')->find((int) $articleId);
+        if (! $article) {
+            $this->entryForm['article_id'] = '';
+
+            return;
+        }
+
+        $this->entryForm['title'] = $article->title;
+        $this->entryForm['content_type'] = 'article';
+        $this->entryForm['author_ids'] = $article->authors->pluck('id')->all();
     }
 
     public function openEditEntry(int $entryId): void
@@ -156,7 +234,9 @@ class IssuePlanning extends Page
             'responsible_user_id' => $entry->responsible_user_id,
             'due_at' => $entry->due_at?->format('Y-m-d'),
             'internal_notes' => $entry->internal_notes,
-            'author_ids' => $entry->authors()->pluck('authors.id')->all(),
+            'author_ids' => $entry->article
+                ? $entry->article->authors()->pluck('authors.id')->all()
+                : $entry->authors()->pluck('authors.id')->all(),
         ];
         $this->entryFormOpen = true;
     }
@@ -241,11 +321,31 @@ class IssuePlanning extends Page
     /** @return array<int, string> */
     public function articleOptions(): array
     {
-        if (! $this->canMutatePlan()) {
+        if (! $this->canMutatePlan() || $this->isStructuralEntryForm()) {
             return [];
         }
 
-        return Article::query()->orderBy('title')->pluck('title', 'id')->all();
+        $issueId = $this->selectedIssue()?->getKey();
+        $query = Article::query()->where(function (Builder $query) use ($issueId): void {
+            $query->whereDoesntHave('issueEntries');
+
+            if ($this->editingEntryId && $issueId) {
+                $query->orWhereHas('issueEntries', fn (Builder $entries): Builder => $entries
+                    ->whereKey($this->editingEntryId)
+                    ->where('issue_id', $issueId));
+            }
+        });
+
+        $options = $query->orderBy('title')->pluck('title', 'id')->all();
+
+        if ($this->editingEntryId) {
+            $currentArticle = $this->editableEntry($this->editingEntryId)->article;
+            if ($currentArticle && ! array_key_exists($currentArticle->getKey(), $options)) {
+                $options[$currentArticle->getKey()] = $currentArticle->title;
+            }
+        }
+
+        return $options;
     }
 
     /** @return array<int, string> */
@@ -258,7 +358,7 @@ class IssuePlanning extends Page
     public function responsibleUserOptions(): array
     {
         return $this->canMutatePlan()
-            ? User::query()->where('role', UserRole::Redakteur->value)->orderBy('name')->pluck('name', 'id')->all()
+            ? User::query()->orderBy('name')->pluck('name', 'id')->all()
             : [];
     }
 
@@ -282,9 +382,16 @@ class IssuePlanning extends Page
     {
         return [
             'article' => 'Artikel', 'interview' => 'Interview', 'comment' => 'Kommentar', 'gloss' => 'Glosse',
-            'comic' => 'WerDi-Comic', 'cover' => 'Titelblatt', 'photo' => 'Fotoseite', 'infographic' => 'Infografik',
-            'events' => 'Termine', 'imprint' => 'Impressum', 'other' => 'Sonstiger Inhalt',
+            'comic' => 'WerDi-Comic', 'cover' => 'Titelseite', 'closing_page' => 'Schlussseite',
+            'photo' => 'Fotoseite', 'infographic' => 'Infografik', 'events' => 'Termine',
+            'imprint' => 'Impressum', 'other' => 'Sonstiger Inhalt',
         ];
+    }
+
+    /** @return array<string, string> */
+    public function entryContentTypeOptions(): array
+    {
+        return collect($this->contentTypeOptions())->except(['cover', 'closing_page'])->all();
     }
 
     public function editorialStatusLabel(IssueEntry $entry): string

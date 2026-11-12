@@ -48,10 +48,10 @@ Die **Ausgabenplanung** ist eine interne Redaktionsseite. Die öffentliche Ausga
 
 ### Ausgabe vorbereiten
 
-1. Unter **Ausgaben** eine Ausgabe anlegen oder öffnen.
+1. Unter **Ausgabenplanung** über **Neue Ausgabe planen** eine neue Ausgabe anlegen oder eine vorhandene Ausgabe auswählen. Nach dem Anlegen öffnet sich direkt der neue Plan.
 2. Eine eindeutige **Ausgabennummer**, einen Arbeitstitel und bei Bedarf Redaktionsschluss sowie Drucktermin eintragen.
 3. Die **Gesamtseitenzahl** festlegen. Sie ist frei wählbar; auch ungerade Zahlen sind erlaubt. Wird sie später verkleinert, blockieren belegte Seiten die Änderung. Erst nach dem Verschieben oder Lösen der betroffenen Heftplätze kann gespeichert werden. Eine Ausgabe mit Heftplätzen kann nicht gelöscht werden; verschiebe deren Einträge vorher in eine andere Ausgabe.
-4. Unter **Ausgabenplanung** die Ausgabe öffnen. Jede freie Seite wird automatisch im Heftspiegel angezeigt.
+4. Im Heftspiegel wird Seite 1 als Titelseite geführt. Dort gibt es ausschließlich den Platzhalter **Titelseite**; CMS-Artikel werden nicht auf dem Cover eingeplant.
 
 ### Beiträge einplanen
 
@@ -60,7 +60,10 @@ Die **Ausgabenplanung** ist eine interne Redaktionsseite. Die öffentliche Ausga
 - Umfang als Seitenanteil eintragen. Mehrseitige Beiträge beginnen auf der gewählten Startseite und laufen auf die folgenden Seiten weiter. Kleine Beiträge können sich eine Seite teilen, wenn Startseite und Seitenanteil so gesetzt sind, dass sie einander nicht überlappen.
 - Ein Beitrag ohne feste Position bleibt unter **Noch nicht platziert** und reserviert dort weiterhin seinen Seitenumfang.
 - Eine echte **Doppelseite** belegt genau zwei gegenüberliegende Seiten und beginnt auf der geraden linken Seite. Ein normaler zweitseitiger Text bleibt davon unterscheidbar.
+- Auf der letzten Seite lässt sich bei Bedarf eine generische **Schlussseite** als Platzhalter anlegen. Sie wandert bei einer Änderung der Gesamtseitenzahl automatisch auf die neue letzte Seite; eine belegte Zielseite verhindert die Änderung.
 - Der WerDi-Comic lässt sich als Inhaltsart „WerDi-Comic“ mit einer ganzen A5-Seite einplanen. Er ist nicht verpflichtend.
+- Die Auswahl **CMS-Artikel** enthält nicht verplante Artikel sowie beim Bearbeiten den bereits zugeordneten Artikel. Titel, Rubrik und Autor*innen eines verknüpften Artikels werden aus dem CMS übernommen.
+- Die **Startposition auf der Seite** wird nur gebraucht, wenn mehrere Beiträge dieselbe Seite teilen: `0` bedeutet Seitenanfang, `0,5` Seitenmitte. Als verantwortliche Person kann jedes Benutzerkonto ausgewählt werden.
 
 Im Heftspiegel können Redaktionsmitglieder Beiträge ziehen und ablegen. Über **Liste** gibt es dieselben Seitenfelder für die manuelle Platzierung und Nutzung auf kleineren Bildschirmen. Sperren schützt einen festen Platz vor versehentlichem Verschieben; zum Ändern zuerst entsperren. Platzierte Beiträge lassen sich auch aus dem Spiegel lösen, ohne sie zu löschen.
 

@@ -5,6 +5,9 @@ namespace Tests\Feature\IssuePlanning;
 use App\Enums\ArticleStatus;
 use App\Enums\UserRole;
 use App\Filament\Pages\IssuePlanning;
+use App\Filament\Resources\Issues\Pages\CreateIssue;
+use App\Filament\Resources\Issues\IssueResource;
+use App\Models\Author;
 use App\Models\Article;
 use App\Models\Issue;
 use App\Models\IssueEntry;
@@ -55,6 +58,131 @@ class IssuePlanningPageTest extends TestCase
             ->assertSee('Liste')
             ->assertSee('Alle Heftplätze')
             ->assertSee('Noch ohne Position');
+    }
+
+    public function test_editor_can_start_a_new_planned_issue_from_the_planner(): void
+    {
+        $editor = $this->user('redaktion');
+        $createUrl = IssueResource::getUrl('create', ['from' => 'planning']);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->assertSee('Neue Ausgabe planen')
+            ->assertSee($createUrl);
+
+        $component = Livewire::actingAs($editor)->test(CreateIssue::class)
+            ->set('from', 'planning')
+            ->fillForm(['title' => 'Geplante Frühjahrsausgabe', 'page_count' => 16])
+            ->call('create')
+            ->assertHasNoErrors();
+
+        $issue = Issue::query()->where('title', 'Geplante Frühjahrsausgabe')->sole();
+        $component->assertRedirect(IssuePlanning::getUrl(['issue' => $issue->id]));
+        self::assertSame('planning', $issue->production_status);
+    }
+
+    public function test_cover_is_a_placeholder_and_a_generic_closing_page_can_be_added(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe mit Cover und Schlussseite', 8);
+        $component = Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $issue->id)
+            ->assertSee('Titelseite als Platzhalter anlegen')
+            ->assertSee('Schlussseite als Platzhalter einplanen')
+            ->call('openCoverPlaceholder')
+            ->assertSet('entryForm.article_id', '')
+            ->assertSet('entryForm.title', 'Titelseite')
+            ->assertSet('entryForm.content_type', 'cover')
+            ->assertSet('entryForm.page_start', 1)
+            ->call('saveEntry')
+            ->assertHasNoErrors()
+            ->call('openClosingPagePlaceholder')
+            ->assertSet('entryForm.article_id', '')
+            ->assertSet('entryForm.title', 'Schlussseite')
+            ->assertSet('entryForm.content_type', 'closing_page')
+            ->assertSet('entryForm.page_start', 8)
+            ->call('saveEntry')
+            ->assertHasNoErrors()
+            ->assertSee('Titelseite')
+            ->assertSee('Schlussseite');
+
+        self::assertDatabaseHas('issue_entries', [
+            'issue_id' => $issue->id, 'content_type' => 'cover', 'title' => 'Titelseite', 'page_start' => 1,
+        ]);
+        self::assertDatabaseHas('issue_entries', [
+            'issue_id' => $issue->id, 'content_type' => 'closing_page', 'title' => 'Schlussseite', 'page_start' => 8,
+        ]);
+    }
+
+    public function test_article_picker_only_offers_unlinked_articles_and_the_current_link_when_editing(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe Auswahl', 8);
+        $otherIssue = $this->issue('Andere Ausgabe', 8);
+        $available = $this->article($editor, 'Freier Artikel');
+        $linkedHere = $this->article($editor, 'Artikel dieser Ausgabe');
+        $linkedElsewhere = $this->article($editor, 'Artikel anderer Ausgabe');
+        $currentEntry = $this->entry($issue, ['article_id' => $linkedHere->id, 'title' => $linkedHere->title]);
+        $this->entry($otherIssue, ['article_id' => $linkedElsewhere->id, 'title' => $linkedElsewhere->title]);
+        $component = Livewire::actingAs($editor)->test(IssuePlanning::class)->call('selectIssue', $issue->id);
+
+        self::assertSame([$available->id], array_map('intval', array_keys($component->instance()->articleOptions())));
+
+        $component->call('openEditEntry', $currentEntry->id);
+        self::assertEqualsCanonicalizing(
+            [$available->id, $linkedHere->id],
+            array_map('intval', array_keys($component->instance()->articleOptions())),
+        );
+    }
+
+    public function test_selecting_an_article_copies_its_title_type_and_authors_into_the_plan(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe Artikelmetadaten', 8);
+        $article = $this->article($editor);
+        $author = Author::query()->create(['name' => 'Ada Beispiel']);
+        $article->authors()->attach($author);
+
+        $component = Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $issue->id)
+            ->call('openEntryForm', 3)
+            ->set('entryForm.article_id', $article->id)
+            ->assertSet('entryForm.title', $article->title)
+            ->assertSet('entryForm.content_type', 'article')
+            ->assertSet('entryForm.author_ids', [$author->id])
+            ->assertSee('Rubrik: Interview')
+            ->assertSee('Ada Beispiel')
+            ->call('saveEntry')
+            ->assertHasNoErrors();
+
+        $entry = $issue->entries()->sole();
+        self::assertSame('article', $entry->content_type);
+        self::assertSame([$author->id], $entry->display_authors->modelKeys());
+        self::assertSame(0, $entry->authors()->count());
+    }
+
+    public function test_responsible_user_picker_includes_editorial_and_author_accounts(): void
+    {
+        $editor = $this->user('redaktion');
+        $author = $this->user('redakteur', 'author@example.test');
+        $admin = $this->user('admin', 'admin@example.test');
+        $component = Livewire::actingAs($editor)->test(IssuePlanning::class);
+        $options = $component->instance()->responsibleUserOptions();
+
+        self::assertSame($author->name, $options[$author->id]);
+        self::assertSame($editor->name, $options[$editor->id]);
+        self::assertSame($admin->name, $options[$admin->id]);
+    }
+
+    public function test_page_offset_label_explains_how_to_share_a_page(): void
+    {
+        $editor = $this->user('redaktion');
+        $issue = $this->issue('Ausgabe Seitenanteil', 8);
+
+        Livewire::actingAs($editor)->test(IssuePlanning::class)
+            ->call('selectIssue', $issue->id)
+            ->call('openEntryForm', 3)
+            ->assertSee('Startposition auf der Seite')
+            ->assertSee('0,5 steht für die Seitenmitte');
     }
 
     public function test_editor_can_create_a_placeholder_link_an_article_and_change_both_statuses(): void
@@ -190,10 +318,10 @@ class IssuePlanningPageTest extends TestCase
         return Issue::query()->create(['title' => $title, 'page_count' => $pageCount]);
     }
 
-    private function article(User $creator): Article
+    private function article(User $creator, string $title = 'Verknüpfter Artikel'): Article
     {
         return Article::query()->create([
-            'title' => 'Verknüpfter Artikel', 'slug' => 'verknuepfter-artikel', 'category' => 'Interview',
+            'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title), 'category' => 'Interview',
             'created_by' => $creator->id, 'status' => ArticleStatus::Review,
         ]);
     }

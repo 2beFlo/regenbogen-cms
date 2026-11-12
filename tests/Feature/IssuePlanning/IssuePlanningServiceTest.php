@@ -62,6 +62,90 @@ class IssuePlanningServiceTest extends TestCase
         self::assertSame(8, $issue->fresh()->page_count);
     }
 
+    public function test_a_generic_closing_page_tracks_the_last_page_when_the_issue_resizes(): void
+    {
+        $issue = $this->issue(8);
+        $service = app(IssuePlanningService::class);
+        $closing = $service->saveEntry($issue, null, [
+            'title' => 'Schlussseite', 'content_type' => 'closing_page', 'page_start' => 8, 'page_span' => 1,
+        ]);
+
+        $service->updateIssue($issue, ['page_count' => 12]);
+        self::assertSame(12, $closing->fresh()->page_start);
+        $service->updateIssue($issue->fresh(), ['page_count' => 6]);
+        self::assertSame(6, $closing->fresh()->page_start);
+
+        $occupant = $this->entry($issue->fresh(), ['title' => 'Vorgesehener Anzeigenplatz', 'page_start' => 4]);
+        try {
+            $service->updateIssue($issue->fresh(), ['page_count' => 4]);
+            self::fail('A closing-page move must not overwrite a planned entry.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('page_count', $exception->errors());
+        }
+
+        self::assertSame(6, $issue->fresh()->page_count);
+        self::assertSame(6, $closing->fresh()->page_start);
+        self::assertSame(4, $occupant->fresh()->page_start);
+    }
+
+    public function test_cover_and_closing_page_are_fixed_placeholders_and_page_one_rejects_articles(): void
+    {
+        $issue = $this->issue(8);
+        $service = app(IssuePlanningService::class);
+        $cover = $service->saveEntry($issue, null, [
+            'title' => 'Falscher Titel', 'content_type' => 'cover', 'page_start' => 1, 'page_span' => 1,
+        ]);
+        self::assertSame('Titelseite', $cover->title);
+
+        $article = Article::query()->create([
+            'title' => 'Kein Coverartikel', 'slug' => 'kein-coverartikel', 'category' => 'Interview',
+            'status' => ArticleStatus::Draft,
+        ]);
+        try {
+            $service->saveEntry($issue, null, [
+                'article_id' => $article->id, 'title' => $article->title, 'content_type' => 'article',
+                'page_start' => 1, 'page_span' => 1,
+            ]);
+            self::fail('Page one is reserved for the cover placeholder.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('page_start', $exception->errors());
+        }
+
+        try {
+            $service->moveEntry($issue, $cover->id, 2);
+            self::fail('A structural cover placeholder cannot move.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('page_start', $exception->errors());
+        }
+
+        self::assertSame(1, $cover->fresh()->page_start);
+        self::assertSame(0, $issue->entries()->where('article_id', $article->id)->count());
+    }
+
+    public function test_a_cms_article_cannot_be_linked_to_heftplaetze_in_multiple_issues(): void
+    {
+        $firstIssue = $this->issue(8);
+        $secondIssue = Issue::query()->create(['title' => 'Andere Ausgabe', 'page_count' => 8]);
+        $article = Article::query()->create([
+            'title' => 'Nur einmal einplanbar', 'slug' => 'nur-einmal-einplanbar', 'category' => 'Reportage',
+            'status' => ArticleStatus::Draft,
+        ]);
+        app(IssuePlanningService::class)->saveEntry($firstIssue, null, [
+            'article_id' => $article->id, 'title' => $article->title, 'content_type' => 'article', 'page_start' => 2,
+        ]);
+
+        try {
+            app(IssuePlanningService::class)->saveEntry($secondIssue, null, [
+                'article_id' => $article->id, 'title' => $article->title, 'content_type' => 'article', 'page_start' => 2,
+            ]);
+            self::fail('A CMS article should not be linked into more than one issue plan.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('article_id', $exception->errors());
+        }
+
+        self::assertSame(1, IssueEntry::query()->where('article_id', $article->id)->count());
+    }
+
     public function test_it_rejects_a_move_that_overlaps_another_entry_without_overwriting_it(): void
     {
         $issue = $this->issue(8);
@@ -182,12 +266,12 @@ class IssuePlanningServiceTest extends TestCase
         ]);
         $service = app(IssuePlanningService::class);
         $entry = $service->saveEntry($issue, null, [
-            'article_id' => $article->id, 'content_type' => 'article', 'page_start' => 1, 'page_span' => 1,
+            'article_id' => $article->id, 'content_type' => 'article', 'page_start' => 3, 'page_span' => 1,
         ]);
 
         try {
             $service->saveEntry($issue, null, [
-                'article_id' => $article->id, 'content_type' => 'article', 'page_start' => 3, 'page_span' => 1,
+                'article_id' => $article->id, 'content_type' => 'article', 'page_start' => 5, 'page_span' => 1,
             ]);
             self::fail('A linked article cannot be duplicated within the same issue.');
         } catch (ValidationException $exception) {

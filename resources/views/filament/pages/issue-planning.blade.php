@@ -9,7 +9,12 @@
     <div class="regenbogen-issue-planning" x-data x-init="if (window.matchMedia('(max-width: 700px)').matches) $wire.set('viewMode', 'list')">
         @if ($issues->isEmpty())
             <x-filament::section>
-                <p class="text-sm text-gray-600 dark:text-gray-300">Es gibt noch keine Ausgaben, die du ansehen kannst.</p>
+                <div class="regenbogen-issue-planning__empty">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Es gibt noch keine Ausgaben, die du ansehen kannst.</p>
+                    @if ($this->canMutatePlan())
+                        <a href="{{ \App\Filament\Resources\Issues\IssueResource::getUrl('create', ['from' => 'planning']) }}" class="fi-btn fi-btn-size-md fi-btn-color-primary">Neue Ausgabe planen</a>
+                    @endif
+                </div>
             </x-filament::section>
         @else
             <x-filament::section>
@@ -23,6 +28,9 @@
                         </select>
                     </label>
                     <div class="regenbogen-issue-planning__toolbar-actions">
+                        @if ($this->canMutatePlan())
+                            <a href="{{ \App\Filament\Resources\Issues\IssueResource::getUrl('create', ['from' => 'planning']) }}" class="fi-btn fi-btn-size-md fi-btn-color-gray">Neue Ausgabe planen</a>
+                        @endif
                         @if ($this->canMutatePlan() && $issue)
                             <a href="{{ \App\Filament\Resources\Issues\IssueResource::getUrl('edit', ['record' => $issue]) }}" class="fi-btn fi-btn-size-md fi-btn-color-gray">Ausgabe bearbeiten</a>
                             <button type="button" wire:click="openEntryForm" class="fi-btn fi-btn-size-md fi-btn-color-primary">Beitrag einplanen</button>
@@ -66,27 +74,53 @@
                 @if ($entryFormOpen && $this->canMutatePlan())
                     <x-filament::section>
                         <x-slot name="heading">{{ $editingEntryId ? 'Heftplatz bearbeiten' : 'Beitrag einplanen' }}</x-slot>
+                        @php($selectedArticle = $this->selectedArticle())
                         <form wire:submit="saveEntry" class="regenbogen-issue-entry-form">
+                            @if ($this->isStructuralEntryForm())
+                                <div class="regenbogen-issue-entry-form__wide regenbogen-issue-entry-form__info">
+                                    @if (($entryForm['content_type'] ?? null) === 'cover')
+                                        Die Titelseite wird als eigener Platzhalter geplant. CMS-Artikel werden hier nicht verknüpft.
+                                    @else
+                                        Die Schlussseite ist ein eigener Platzhalter am Ende des Hefts. CMS-Artikel werden hier nicht verknüpft.
+                                    @endif
+                                </div>
+                            @else
+                                <label>
+                                    <span>CMS-Artikel (optional)</span>
+                                    <select wire:model.live="entryForm.article_id" class="fi-input">
+                                        <option value="">Platzhalter ohne Artikel</option>
+                                        @foreach ($this->articleOptions() as $articleId => $articleTitle)
+                                            <option value="{{ $articleId }}">{{ $articleTitle }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small>Es erscheinen nur freie Artikel und der aktuell verknüpfte Artikel.</small>
+                                </label>
+                            @endif
                             <label>
-                                <span>CMS-Artikel (optional)</span>
-                                <select wire:model.live="entryForm.article_id" class="fi-input">
-                                    <option value="">Platzhalter ohne Artikel</option>
-                                    @foreach ($this->articleOptions() as $articleId => $articleTitle)
-                                        <option value="{{ $articleId }}">{{ $articleTitle }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
-                            <label>
-                                <span>Arbeitstitel{{ blank($entryForm['article_id'] ?? null) ? ' *' : '' }}</span>
-                                <input wire:model="entryForm.title" type="text" maxlength="255" class="fi-input" placeholder="z. B. Interview mit XY">
+                                @if ($selectedArticle)
+                                    <span>Titel aus dem CMS-Artikel</span>
+                                    <input type="text" class="fi-input" value="{{ $selectedArticle->title }}" readonly>
+                                @elseif ($this->isStructuralEntryForm())
+                                    <span>Platzhalter</span>
+                                    <input type="text" class="fi-input" value="{{ $entryForm['title'] }}" readonly>
+                                @else
+                                    <span>Arbeitstitel *</span>
+                                    <input wire:model="entryForm.title" type="text" maxlength="255" class="fi-input" placeholder="z. B. Interview mit XY">
+                                @endif
                             </label>
                             <label>
                                 <span>Inhaltsart</span>
-                                <select wire:model="entryForm.content_type" class="fi-input">
-                                    @foreach ($this->contentTypeOptions() as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
+                                @if ($selectedArticle)
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">Artikel{{ $selectedArticle->rubric_name ? ' · Rubrik: '.$selectedArticle->rubric_name : '' }}</div>
+                                @elseif ($this->isStructuralEntryForm())
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">{{ $this->contentTypeOptions()[$entryForm['content_type']] }}</div>
+                                @else
+                                    <select wire:model="entryForm.content_type" class="fi-input">
+                                        @foreach ($this->entryContentTypeOptions() as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             </label>
                             <label>
                                 <span>Umfang in Seiten</span>
@@ -94,23 +128,36 @@
                             </label>
                             <label>
                                 <span>Startseite</span>
-                                <select wire:model="entryForm.page_start" class="fi-input">
-                                    <option value="">Noch nicht platziert</option>
-                                    @for ($page = 1; $page <= (int) $issue->page_count; $page++)
-                                        <option value="{{ $page }}">Seite {{ $page }}</option>
-                                    @endfor
-                                </select>
+                                @if ($this->isStructuralEntryForm())
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">Seite {{ $entryForm['page_start'] }}</div>
+                                @else
+                                    <select wire:model="entryForm.page_start" class="fi-input">
+                                        <option value="">Noch nicht platziert</option>
+                                        @for ($page = 2; $page <= (int) $issue->page_count; $page++)
+                                            <option value="{{ $page }}">Seite {{ $page }}</option>
+                                        @endfor
+                                    </select>
+                                @endif
                             </label>
                             <label>
-                                <span>Seitenanteil auf Startseite</span>
-                                <input wire:model="entryForm.page_offset" type="number" min="0" max="0.9999" step="0.0001" class="fi-input">
+                                <span>Startposition auf der Seite</span>
+                                @if ($this->isStructuralEntryForm())
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">Seitenanfang</div>
+                                @else
+                                    <input wire:model="entryForm.page_offset" type="number" min="0" max="0.9999" step="0.0001" class="fi-input" aria-describedby="issue-page-offset-help">
+                                    <small id="issue-page-offset-help">Nur nötig, wenn Beiträge eine Seite teilen. 0 = Seitenanfang; 0,5 steht für die Seitenmitte.</small>
+                                @endif
                             </label>
                             <label>
                                 <span>Platzierungsart</span>
-                                <select wire:model="entryForm.placement_type" class="fi-input">
-                                    <option value="normal">Normaler Beitrag</option>
-                                    <option value="spread">Echte Doppelseite (gegenüberliegende Seiten)</option>
-                                </select>
+                                @if ($this->isStructuralEntryForm())
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">Einseitiger Platzhalter</div>
+                                @else
+                                    <select wire:model="entryForm.placement_type" class="fi-input">
+                                        <option value="normal">Normaler Beitrag</option>
+                                        <option value="spread">Echte Doppelseite (gegenüberliegende Seiten)</option>
+                                    </select>
+                                @endif
                             </label>
                             <label>
                                 <span>Planungsstand</span>
@@ -129,12 +176,20 @@
                             </label>
                             <label>
                                 <span>Autor*innen</span>
-                                <select wire:model="entryForm.author_ids" multiple class="fi-input regenbogen-issue-entry-form__multiple">
-                                    @foreach ($this->authorOptions() as $authorId => $authorName)
-                                        <option value="{{ $authorId }}">{{ $authorName }}</option>
-                                    @endforeach
-                                </select>
-                                <small>Bei verknüpften Artikeln werden deren Autor*innen angezeigt.</small>
+                                @if ($selectedArticle)
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">
+                                        {{ $selectedArticle->authors->pluck('name')->join(', ') ?: 'Keine Autor*innen im Artikel hinterlegt' }}
+                                    </div>
+                                    <small>Autor*innen und Rubrik werden aus dem CMS-Artikel übernommen.</small>
+                                @elseif ($this->isStructuralEntryForm())
+                                    <div class="fi-input regenbogen-issue-entry-form__readonly">Keine Artikelzuordnung</div>
+                                @else
+                                    <select wire:model="entryForm.author_ids" multiple class="fi-input regenbogen-issue-entry-form__multiple">
+                                        @foreach ($this->authorOptions() as $authorId => $authorName)
+                                            <option value="{{ $authorId }}">{{ $authorName }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             </label>
                             <label>
                                 <span>Verantwortlich</span>
